@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Diagnostic .habil</title>
+<style>
+  body { font-family: monospace; background: #0d1117; color: #e6edf3; padding: 24px; }
+  h2 { color: #58a6ff; }
+  .ok   { color: #3fb950; }
+  .warn { color: #d29922; }
+  .err  { color: #f85149; }
+  .box  { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 12px 0; }
+  .hex  { font-size: 11px; word-break: break-all; color: #8b949e; }
+  button { background: #238636; color: #fff; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-family: monospace; }
+  input[type=password] { background: #161b22; border: 1px solid #30363d; color: #e6edf3; padding: 8px 12px; border-radius: 6px; font-family: monospace; margin-right: 8px; }
+  #drop { border: 2px dashed #30363d; border-radius: 8px; padding: 32px; text-align: center; cursor: pointer; margin-bottom: 16px; }
+  #drop.over { border-color: #58a6ff; background: rgba(88,166,255,.05); }
+</style>
+</head>
+<body>
+<h2>🔍 Diagnostic fichier .habil</h2>
+<div id="drop" onclick="document.getElementById('fi').click()">
+  Glissez votre fichier .habil ici ou cliquez<br>
+  <input type="file" id="fi" style="display:none" accept=".habil,.xlsx">
+</div>
+<div id="out"></div>
+
+<script>
+const drop = document.getElementById('drop');
+drop.addEventListener('dragover', e=>{e.preventDefault();drop.classList.add('over')});
+drop.addEventListener('dragleave', ()=>drop.classList.remove('over'));
+drop.addEventListener('drop', e=>{e.preventDefault();drop.classList.remove('over');analyze(e.dataTransfer.files[0])});
+document.getElementById('fi').addEventListener('change', e=>{ if(e.target.files[0]) analyze(e.target.files[0]) });
+
+async function analyze(file) {
+  const out = document.getElementById('out');
+  out.innerHTML = '';
+
+  const ab = await file.arrayBuffer();
+  const bytes = new Uint8Array(ab);
+
+  let html = `<div class="box">`;
+  html += `<b>Fichier :</b> ${file.name}<br>`;
+  html += `<b>Taille :</b> ${bytes.byteLength} octets<br>`;
+
+  // Check taille minimale
+  if (bytes.byteLength < 48) {
+    html += `<span class="err">❌ TROP PETIT — minimum 48 octets requis (header + tag GCM). Fichier tronqué ou invalide.</span><br>`;
+    html += `</div>`;
+    out.innerHTML = html;
+    return;
+  }
+  html += `<span class="ok">✅ Taille OK</span><br><br>`;
+
+  // Magic
+  const magic = new TextDecoder().decode(bytes.slice(0,4));
+  if (magic === 'HAB1') {
+    html += `<span class="ok">✅ Magic 'HAB1' présent</span><br>`;
+  } else {
+    html += `<span class="err">❌ Magic invalide : '${magic}' (attendu 'HAB1')</span><br>`;
+    // Tenter de détecter si c'est un xlsx en clair
+    const pk = new TextDecoder('utf-8', {fatal:false}).decode(bytes.slice(0,2));
+    if (pk === 'PK') {
+      html += `<span class="warn">⚠️ Les 2 premiers octets sont 'PK' — ce fichier est probablement un .xlsx en clair renommé en .habil</span><br>`;
+    }
+    const isHtml = new TextDecoder('utf-8', {fatal:false}).decode(bytes.slice(0,5)).trim().toLowerCase();
+    if (isHtml.startsWith('<!doc') || isHtml.startsWith('<html')) {
+      html += `<span class="warn">⚠️ Le fichier commence par du HTML — il s'agit probablement de la page de l'application elle-même, pas d'un fichier de données</span><br>`;
+    }
+    html += `</div>`;
+    out.innerHTML = html;
+    return;
+  }
+
+  // Afficher salt et IV
+  const salt = bytes.slice(4,20);
+  const iv   = bytes.slice(20,32);
+  const ct   = bytes.slice(32);
+  html += `<b>Salt (PBKDF2, 16 oct.) :</b> <span class="hex">${[...salt].map(b=>b.toString(16).padStart(2,'0')).join(' ')}</span><br>`;
+  html += `<b>IV   (AES-GCM, 12 oct.) :</b> <span class="hex">${[...iv].map(b=>b.toString(16).padStart(2,'0')).join(' ')}</span><br>`;
+  html += `<b>Ciphertext :</b> ${ct.byteLength} octets (dont 16 tag GCM)<br>`;
+  if (ct.byteLength < 16) {
+    html += `<span class="err">❌ Ciphertext trop court — données manquantes</span><br>`;
+  } else {
+    html += `<span class="ok">✅ Structure binaire valide</span><br>`;
+  }
+  html += `</div>`;
+
+  // Test déchiffrement
+  html += `<div class="box">`;
+  html += `<b>Test de déchiffrement</b><br><br>`;
+  html += `<input type="password" id="testPwd" placeholder="Mot de passe…">`;
+  html += `<button onclick="testDecrypt(${JSON.stringify([...bytes])})">Tester →</button>`;
+  html += `<div id="decResult" style="margin-top:12px"></div>`;
+  html += `</div>`;
+
+  out.innerHTML = html;
+}
+
+async function testDecrypt(bytesArr) {
+  const bytes = new Uint8Array(bytesArr);
+  const pwd = document.getElementById('testPwd').value;
+  const res = document.getElementById('decResult');
+  if (!pwd) { res.innerHTML = '<span class="warn">⚠️ Entrez un mot de passe</span>'; return; }
+  res.innerHTML = '⏳ Dérivation de clé en cours (200k itérations PBKDF2)…';
+
+  try {
+    const enc = new TextEncoder();
+    const keyMat = await crypto.subtle.importKey('raw', enc.encode(pwd), 'PBKDF2', false, ['deriveKey']);
+    const salt = bytes.slice(4,20);
+    const iv   = bytes.slice(20,32);
+    const ct   = bytes.slice(32);
+    const key = await crypto.subtle.deriveKey(
+      { name:'PBKDF2', salt, iterations:200000, hash:'SHA-256' },
+      keyMat, { name:'AES-GCM', length:256 }, false, ['decrypt']
+    );
+    const pt = await crypto.subtle.decrypt({ name:'AES-GCM', iv }, key, ct);
+    const result = new Uint8Array(pt);
+    // Vérifier si c'est bien un xlsx (magic PK)
+    const xlsxMagic = String.fromCharCode(result[0], result[1]);
+    if (xlsxMagic === 'PK') {
+      res.innerHTML = `<span class="ok">✅ DÉCHIFFREMENT RÉUSSI — ${result.byteLength} octets, format XLSX valide (magic PK OK)</span>`;
+    } else {
+      res.innerHTML = `<span class="warn">⚠️ Déchiffrement OK mais le résultat ne ressemble pas à un XLSX (magic: '${xlsxMagic}')</span>`;
+    }
+  } catch(e) {
+    res.innerHTML = `<span class="err">❌ ÉCHEC : ${e.message || 'Mot de passe incorrect ou données corrompues'}</span>`;
+  }
+}
+</script>
+</body>
+</html>

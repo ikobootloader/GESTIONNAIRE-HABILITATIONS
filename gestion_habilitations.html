@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registre des Habilitations — Administration</title>
+<script>
+  (function() {
+    try {
+      var saved = localStorage.getItem('habil_theme');
+      if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+    } catch(e) {}
+  })();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="css/styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <button class="theme-toggle theme-toggle-floating" onclick="toggleTheme()" title="Basculer thème">
+    <span class="theme-icon-sun">☀</span><span class="theme-icon-moon">☾</span>
+  </button>
+  <div class="splash-logo">Administration Publique</div>
+  <div class="splash-title">Registre des<br><span>Habilitations</span></div>
+  <div class="splash-card">
+    <h3>📂 Charger un fichier de données</h3>
+    <div class="file-drop" id="fileDrop" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" accept=".xlsx,.habil">
+      <div class="file-drop-icon">📋</div>
+      <p><strong>Glissez-déposez</strong> votre fichier ici<br>ou cliquez pour parcourir<br>
+      <small style="color:var(--text3)">Formats acceptés : .xlsx (import) · .habil (chiffré)</small></p>
+    </div>
+    <div style="padding:12px;background:var(--green-bg);border:1px solid var(--green);border-radius:10px;margin:14px 0;font-size:12px;color:var(--text);line-height:1.6;">
+      <strong>🔒 Chiffrement AES-256 obligatoire</strong><br>
+      <span style="color:var(--text2)">Tous les fichiers .habil sont chiffrés. Un mot de passe vous sera demandé à la création et à chaque ouverture.</span>
+    </div>
+    <div class="pwd-field" id="pwdField" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <label id="pwdFieldLabel" style="margin:0;">MOT DE PASSE (REQUIS)</label>
+        <a href="javascript:void(0)" onclick="showRecoveryModal()" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">🔑 Mot de passe oublié ?</a>
+      </div>
+      <div style="display:flex;gap:6px;align-items:stretch;">
+        <input type="password" id="splashPwd" placeholder="Entrez votre mot de passe…"
+          autocomplete="current-password"
+          style="flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-family:inherit;font-size:14px;outline:none;transition:border-color 0.2s;">
+        <button type="button"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:0 12px;cursor:pointer;font-size:14px;flex-shrink:0;"
+          onmousedown="event.preventDefault()"
+          onclick="(function(btn){var i=document.getElementById('splashPwd');i.type=i.type==='password'?'text':'password';btn.textContent=i.type==='password'?'👁':'🙈';})(this)">👁</button>
+      </div>
+      <div id="pwdLengthHint" style="font-size:11px;color:var(--text3);min-height:14px;"></div>
+    </div>
+    <div class="splash-error" id="splashError"></div>
+    <div class="new-file-row">
+      <button class="btn btn-ghost btn-full" onclick="createNewFile()">✦ Nouveau registre vierge</button>
+      <button class="btn btn-primary" onclick="loadFile()" style="flex-shrink:0">Ouvrir →</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <header class="header">
+    <div class="header-logo">Habilitations <span>·</span></div>
+    <nav class="nav-tabs">
+      <div class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard')"><span class="tab-icon">◈</span> Tableau de bord</div>
+      <div class="nav-tab" data-tab="agents" onclick="switchTab('agents')"><span class="tab-icon">👤</span> Agents</div>
+      <div class="nav-tab" data-tab="habilitations" onclick="switchTab('habilitations')"><span class="tab-icon">☰</span> Habilitations</div>
+      <div class="nav-tab" data-tab="revisions" onclick="switchTab('revisions')"><span class="tab-icon">⏱</span> Révisions <span id="revBadge" class="tab-badge" style="display:none"></span></div>
+      <div class="nav-tab" data-tab="settings" onclick="switchTab('settings')"><span class="tab-icon">⚙</span> Paramètres</div>
+    </nav>
+    <div class="header-actions">
+      <span class="save-indicator" id="saveIndicator" title="État de sauvegarde">
+        <span class="save-icon" id="saveIcon"></span>
+        <span class="material-symbols-outlined save-sync" id="saveSync" style="display:none;">sync</span>
+      </span>
+      <span class="encrypt-indicator" id="encryptIndicator" onclick="switchTab('settings')" title="État du chiffrement">
+        <span id="encIcon">🔓</span>
+      </span>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Basculer le thème clair/sombre"><span class="theme-icon-sun">☀</span><span class="theme-icon-moon">☾</span></button>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importExcelInput').click()" title="Importer des données depuis un fichier Excel">⬆</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportFile()" title="Exporter un audit en Excel (non chiffré)">⬇</button>
+      <button class="btn btn-primary btn-sm" onclick="saveFile()" id="saveBtn" title="Sauvegarder le registre">💾</button>
+      <input type="file" id="importExcelInput" accept=".xlsx" style="display:none;" onchange="handleImportExcel(this)">
+      <div style="width:1px;height:24px;background:var(--border);margin:0 2px;flex-shrink:0;"></div>
+      <button class="btn btn-ghost btn-sm" onclick="confirmDisconnect()" title="Fermer le registre et revenir à l'écran d'accueil" style="color:var(--text2);">⏏</button>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Tableau de bord</div>
+          <div class="page-subtitle" id="dbSubtitle"></div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openAgentModal()">＋ Nouvel agent</button>
+          <button class="btn btn-primary btn-sm" onclick="openHabilModal()">＋ Nouvelle habilitation</button>
+        </div>
+      </div>
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card">
+          <div class="stat-value" id="statAgents">0</div>
+          <div class="stat-label">Agents</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statLogiciels">0</div>
+          <div class="stat-label">Logiciels</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statTotalHabils">0</div>
+          <div class="stat-label">Habilitations</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statActifs">0</div>
+          <div class="stat-label">Actives</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statRevisions">0</div>
+          <div class="stat-label">À réviser</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statUrgent">0</div>
+          <div class="stat-label">Urgentes (J-7)</div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;" id="dbGrids">
+        <div class="table-container">
+          <div class="table-toolbar"><span style="font-size:12px;color:var(--text2);font-weight:600;">DERNIERS AGENTS</span></div>
+          <table><thead><tr><th>Agent</th><th>Service</th><th>Logiciels</th></tr></thead>
+          <tbody id="recentAgentsBody"></tbody></table>
+        </div>
+        <div class="table-container">
+          <div class="table-toolbar"><span style="font-size:12px;color:var(--text2);font-weight:600;">RÉVISIONS IMMINENTES</span></div>
+          <table><thead><tr><th>Agent</th><th>Logiciel</th><th>Échéance</th></tr></thead>
+          <tbody id="urgentRevBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENTS -->
+    <div class="page" id="page-agents">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Agents</div>
+          <div class="page-subtitle">Référentiel des agents et de leurs accès logiciels</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openAgentModal()">＋ Nouvel agent</button>
+      </div>
+      <div class="table-container">
+        <div class="table-toolbar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="agentSearch" placeholder="Nom, email, service…" oninput="PaginationManager.reset('agents'); renderAgentsTable()">
+          </div>
+          <select class="filter-select" id="agentFilterService" onchange="PaginationManager.reset('agents'); renderAgentsTable()">
+            <option value="">Tous les services</option>
+          </select>
+          <span id="agentCount" style="margin-left:auto;font-size:12px;color:var(--text3);"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th onclick="agentSort('nom')">Agent <span class="sort-icon">↕</span></th>
+              <th onclick="agentSort('service')">Service <span class="sort-icon">↕</span></th>
+              <th onclick="agentSort('poste')">Poste <span class="sort-icon">↕</span></th>
+              <th class="no-sort">Logiciels habilités</th>
+              <th onclick="agentSort('email')">Email <span class="sort-icon">↕</span></th>
+              <th class="no-sort">Actions</th>
+            </tr></thead>
+            <tbody id="agentsBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination-container" id="agentsPagination"></div>
+      </div>
+    </div>
+
+    <!-- HABILITATIONS -->
+    <div class="page" id="page-habilitations">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Registre des habilitations</div>
+          <div class="page-subtitle">Accès accordés par agent et par logiciel métier</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openHabilModal()">＋ Ajouter une habilitation</button>
+      </div>
+      <div class="table-container">
+        <div class="table-toolbar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="habilSearch" placeholder="Agent, logiciel, rôle…" oninput="PaginationManager.reset('habilitations'); renderHabilTable()">
+          </div>
+          <select class="filter-select" id="habilFilterLogiciel" onchange="PaginationManager.reset('habilitations'); renderHabilTable()"><option value="">Tous les logiciels</option></select>
+          <select class="filter-select" id="habilFilterStatut" onchange="PaginationManager.reset('habilitations'); renderHabilTable()">
+            <option value="">Tous les statuts</option>
+            <option>Actif</option><option>Inactif</option><option>Suspendu</option><option>En attente</option>
+          </select>
+          <span id="habilCount" style="margin-left:auto;font-size:12px;color:var(--text3);"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th onclick="habilSort('agent')">Agent <span class="sort-icon">↕</span></th>
+              <th onclick="habilSort('logiciel')">Logiciel <span class="sort-icon">↕</span></th>
+              <th onclick="habilSort('role')">Rôle <span class="sort-icon">↕</span></th>
+              <th onclick="habilSort('permissions')">Permissions <span class="sort-icon">↕</span></th>
+              <th onclick="habilSort('groupe')">Groupe sécurité <span class="sort-icon">↕</span></th>
+              <th onclick="habilSort('statut')">Statut <span class="sort-icon">↕</span></th>
+              <th onclick="habilSort('valideur')">Responsable valideur <span class="sort-icon">↕</span></th>
+              <th onclick="habilSort('revision')">Proch. révision <span class="sort-icon">↕</span></th>
+              <th class="no-sort">Actions</th>
+            </tr></thead>
+            <tbody id="habilBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination-container" id="habilPagination"></div>
+      </div>
+    </div>
+
+    <!-- REVISIONS -->
+    <div class="page" id="page-revisions">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Suivi des révisions</div>
+          <div class="page-subtitle">Habilitations nécessitant une vérification ou un renouvellement</div>
+        </div>
+      </div>
+      <div id="revisionAlerts"></div>
+      <div class="table-container">
+        <div class="table-toolbar">
+          <span style="font-size:12px;color:var(--text2);font-weight:600;">HABILITATIONS À RÉVISER</span>
+          <select class="filter-select" id="revFilterLogiciel" onchange="PaginationManager.reset('revisions'); renderRevisions()"><option value="">Tous les logiciels</option></select>
+          <span id="revCount" style="margin-left:auto;font-size:12px;color:var(--text3);"></span>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr>
+            <th>Agent</th><th>Service</th><th>Logiciel</th><th>Rôle</th>
+            <th>Date révision</th><th>Jours restants</th><th>Responsable valideur</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="revisionBody"></tbody></table>
+        </div>
+        <div class="pagination-container" id="revisionsPagination"></div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Paramètres</div>
+          <div class="page-subtitle">Configuration des référentiels et options de sécurité</div>
+        </div>
+      </div>
+      <div class="settings-grid">
+        <!-- Logiciels -->
+        <div class="settings-card full">
+          <h3>💻 Logiciels métiers</h3>
+          <p style="font-size:12px;color:var(--text3);margin-bottom:14px;">Définissez les logiciels pour lesquels des habilitations peuvent être accordées. Pour chaque logiciel, vous pouvez renseigner un ou plusieurs responsables valideurs par défaut.</p>
+          <div id="logicielsEditor"></div>
+          <button class="btn btn-primary btn-sm" onclick="addLogiciel()" style="margin-top:10px;">＋ Ajouter un logiciel</button>
+        </div>
+
+        <!-- Référentiels simples -->
+        <div class="settings-card">
+          <h3>🏢 Services / Départements</h3>
+          <div class="list-editor" id="servicesEditor"></div>
+          <div class="add-item-row">
+            <input type="text" id="newService" placeholder="Nouveau service…">
+            <button class="btn btn-primary btn-sm" onclick="addParam('services','newService')">＋</button>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>📋 Intitulés de postes</h3>
+          <div class="list-editor" id="postesEditor"></div>
+          <div class="add-item-row">
+            <input type="text" id="newPoste" placeholder="Nouveau poste…">
+            <button class="btn btn-primary btn-sm" onclick="addParam('postes','newPoste')">＋</button>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>🎭 Rôles disponibles</h3>
+          <div class="list-editor" id="rolesEditor"></div>
+          <div class="add-item-row">
+            <input type="text" id="newRole" placeholder="Nouveau rôle…">
+            <button class="btn btn-primary btn-sm" onclick="addParam('roles','newRole')">＋</button>
+          </div>
+        </div>
+        <div class="settings-card">
+          <h3>🔐 Niveaux de permissions</h3>
+          <div class="list-editor" id="permissionsEditor"></div>
+          <div class="add-item-row">
+            <input type="text" id="newPermission" placeholder="Nouveau niveau…">
+            <button class="btn btn-primary btn-sm" onclick="addParam('permissions','newPermission')">＋</button>
+          </div>
+        </div>
+
+        <!-- Sécurité -->
+        <div class="settings-card">
+          <h3>🔒 Sécurité du fichier</h3>
+          <div id="securityStatus" class="security-status">
+            <div class="security-status-icon" id="secStatusIcon">🔓</div>
+            <div>
+              <div class="security-status-title" id="secStatusTitle">Fichier non chiffré</div>
+              <div class="security-status-sub" id="secStatusSub">Données stockées en clair (.xlsx).</div>
+            </div>
+          </div>
+          <div id="securityPendingWarn" class="security-warn" style="display:none;">
+            <span style="font-size:16px;">⚠️</span>
+            <div><strong>Changement en attente</strong><br>
+            <span style="font-size:12px;">Cliquez sur <strong>💾 Sauvegarder</strong> pour appliquer.</span></div>
+          </div>
+          <div id="securityActions" style="display:flex;flex-direction:column;gap:10px;"></div>
+          <div class="divider"></div>
+          <div style="font-size:12px;color:var(--text3);line-height:1.6;">
+            Chiffrement <strong>AES-256-GCM</strong> + <strong>PBKDF2</strong> (200 000 itérations).<br>
+            Extension <code>.habil</code> (chiffré) · <code>.xlsx</code> (clair).
+          </div>
+        </div>
+
+        <!-- Paramètres révision -->
+        <div class="settings-card">
+          <h3>⏱ Révisions</h3>
+          <div class="form-group" style="margin-bottom:12px;">
+            <div class="form-label">PÉRIODICITÉ PAR DÉFAUT (mois)</div>
+            <input type="number" class="form-control" id="revisionPeriod" value="12" min="1" max="60"
+              onchange="params.revisionPeriod=parseInt(this.value)||12; markUnsaved();">
+          </div>
+          <div class="form-group">
+            <div class="form-label">ALERTE AVANT EXPIRATION (jours)</div>
+            <input type="number" class="form-control" id="alertDays" value="30" min="1" max="180"
+              onchange="params.alertDays=parseInt(this.value)||30; markUnsaved(); renderStats(); updateRevBadge();">
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL AGENT -->
+<div class="modal-overlay" id="agentModalOverlay">
+  <div class="modal" style="max-width:780px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="agentModalTitle">Nouvel agent</div>
+        <div class="modal-subtitle">Identité de l'agent et habilitations par logiciel</div>
+      </div>
+      <button class="modal-close" onclick="closeAgentModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-section">
+        <div class="form-section-title">Identité</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">NOM <span class="required">*</span></label>
+            <input class="form-control" id="aNom" placeholder="Nom de famille">
+          </div>
+          <div class="form-group">
+            <label class="form-label">PRÉNOM <span class="required">*</span></label>
+            <input class="form-control" id="aPrenom" placeholder="Prénom">
+          </div>
+          <div class="form-group">
+            <label class="form-label">EMAIL <span class="required">*</span></label>
+            <input class="form-control" id="aEmail" type="email" placeholder="prenom.nom@…">
+          </div>
+          <div class="form-group">
+            <label class="form-label">IDENTIFIANT</label>
+            <input class="form-control" id="aId" placeholder="Généré automatiquement">
+          </div>
+          <div class="form-group">
+            <label class="form-label">SERVICE / DÉPARTEMENT <span class="required">*</span></label>
+            <select class="form-control" id="aService"></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">POSTE</label>
+            <select class="form-control" id="aPoste"></select>
+          </div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Habilitations par logiciel</div>
+        <div id="habilLines" class="habil-lines"></div>
+        <button class="add-habil-btn" onclick="addHabilLine()">＋ Ajouter une habilitation</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeAgentModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveAgent()">💾 Enregistrer l'agent</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HABILITATION SEULE (ajout rapide) -->
+<div class="modal-overlay" id="habilModalOverlay">
+  <div class="modal" style="max-width:600px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="habilModalTitle">Nouvelle habilitation</div>
+        <div class="modal-subtitle">Associer un agent à un logiciel avec un niveau d'accès</div>
+      </div>
+      <button class="modal-close" onclick="closeHabilModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full">
+          <label class="form-label">AGENT <span class="required">*</span></label>
+          <select class="form-control" id="hAgent"></select>
+        </div>
+        <div class="form-group full">
+          <label class="form-label">LOGICIEL <span class="required">*</span></label>
+          <select class="form-control" id="hLogiciel" onchange="onHabilLogicielChange()"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">RÔLE <span class="required">*</span></label>
+          <select class="form-control" id="hRole"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">PERMISSIONS <span class="required">*</span></label>
+          <select class="form-control" id="hPermissions"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">STATUT</label>
+          <select class="form-control" id="hStatut">
+            <option>Actif</option><option>Inactif</option><option>Suspendu</option><option>En attente</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">GROUPES DE SÉCURITÉ</label>
+          <div class="habil-groupes-container" id="hGroupesContainer"></div>
+          <div class="add-habil-groupe-row">
+            <input class="form-control" id="hGroupeInput" placeholder="Ex : GRP_APP_LECTURE…" list="hGroupeList" autocomplete="off">
+            <button class="btn btn-primary btn-sm" onclick="addHabilGroupe()" style="flex-shrink:0;">＋</button>
+          </div>
+          <datalist id="hGroupeList"></datalist>
+          <div id="hGroupeSuggest" style="font-size:11px;color:var(--text3);margin-top:3px;"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">RESPONSABLE VALIDEUR</label>
+          <input class="form-control" id="hValideur" placeholder="Taper pour rechercher un agent..." autocomplete="off" oninput="UI.onValideurInput()">
+          <datalist id="hValideurList"></datalist>
+          <div id="hValideurSuggest" class="valideur-autocomplete-suggestions"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">DATE PROCHAINE RÉVISION</label>
+          <input class="form-control" id="hRevision" type="date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">DATE DERNIÈRE VALIDATION</label>
+          <input class="form-control" id="hDerniereValidation" type="date">
+        </div>
+        <div class="form-group full">
+          <label class="form-label">COMMENTAIRES</label>
+          <textarea class="form-control" id="hCommentaires" placeholder="Contexte, restrictions particulières…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeHabilModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveHabil()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h3 id="confirmTitle">Confirmer</h3>
+    <p id="confirmMsg"></p>
+    <div class="confirm-btns">
+      <button class="btn btn-ghost" onclick="closeConfirm()">Annuler</button>
+      <button class="btn btn-danger" id="confirmBtn">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<!-- PASSWORD MODAL -->
+<div class="modal-overlay" id="passwordModalOverlay">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="passwordModalTitle">Mot de passe</div>
+        <div class="modal-subtitle" id="passwordModalMessage"></div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">MOT DE PASSE <span class="required">*</span></label>
+        <input type="password" class="form-control" id="passwordInput1" placeholder="Minimum 8 caractères" autocomplete="new-password">
+      </div>
+      <div class="form-group" id="passwordConfirmGroup">
+        <label class="form-label">CONFIRMER LE MOT DE PASSE <span class="required">*</span></label>
+        <input type="password" class="form-control" id="passwordInput2" placeholder="Ressaisir le mot de passe" autocomplete="new-password">
+      </div>
+      <div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--text3);line-height:1.6;">
+        <strong>⚠️ Important :</strong><br>
+        • Le mot de passe n'est jamais stocké<br>
+        • Il sera nécessaire à chaque ouverture du fichier<br>
+        • Une clé de récupération sera générée pour récupérer vos données en cas d'oubli
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="passwordModalCancel">Annuler</button>
+      <button class="btn btn-primary" id="passwordModalConfirm">✓ Valider</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECOVERY KEY MODAL -->
+<div class="modal-overlay" id="recoveryKeyModalOverlay">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">🔑 Clé de récupération générée</div>
+        <div class="modal-subtitle">Sauvegardez cette clé en lieu sûr !</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div style="padding:14px;background:var(--orange-bg);border:2px solid var(--orange);border-radius:10px;margin-bottom:16px;">
+        <strong style="color:var(--orange);font-size:14px;">⚠️ TRÈS IMPORTANT</strong>
+        <p style="margin:8px 0 0 0;font-size:13px;line-height:1.6;color:var(--text);">
+          Cette clé permet de récupérer votre mot de passe en cas d'oubli.<br>
+          <strong>Sans cette clé, vos données seront définitivement perdues si vous oubliez votre mot de passe.</strong>
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">CLÉ DE RÉCUPÉRATION (24 MOTS)</label>
+        <textarea id="recoveryKeyDisplay" readonly class="form-control" style="font-family:monospace;font-size:12px;height:120px;resize:none;background:var(--surface2);"></textarea>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="copyRecoveryKey()">📋 Copier</button>
+        <button class="btn btn-ghost" style="flex:1;" onclick="downloadRecoveryKeyFile()">💾 Télécharger</button>
+      </div>
+
+      <label style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--surface2);border-radius:8px;cursor:pointer;user-select:none;">
+        <input type="checkbox" id="recoveryKeySavedCheck" style="width:18px;height:18px;cursor:pointer;">
+        <span style="font-size:13px;line-height:1.4;">
+          <strong>J'ai sauvegardé ma clé de récupération</strong> dans un endroit sécurisé (coffre-fort, gestionnaire de mots de passe, etc.)
+        </span>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="recoveryKeyConfirm" disabled onclick="closeRecoveryKeyModal()">✓ J'ai sauvegardé ma clé</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECOVERY MODAL -->
+<div class="modal-overlay" id="recoveryModalOverlay">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">🔑 Récupération par clé</div>
+        <div class="modal-subtitle">Saisissez votre clé de récupération de 24 mots</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div style="padding:12px;background:var(--blue-bg);border:1px solid var(--blue);border-radius:8px;margin-bottom:16px;font-size:12px;color:var(--text);line-height:1.6;">
+        <strong>ℹ️ Récupération de mot de passe</strong><br>
+        Saisissez les 24 mots de votre clé de récupération. Votre mot de passe sera automatiquement récupéré.
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">CLÉ DE RÉCUPÉRATION (24 MOTS) <span class="required">*</span></label>
+        <textarea id="recoveryKeyInput" class="form-control" placeholder="Saisissez les 24 mots séparés par des espaces..." style="font-family:monospace;font-size:12px;height:100px;"></textarea>
+        <div style="font-size:11px;color:var(--text3);margin-top:4px;">Les mots doivent être séparés par des espaces</div>
+      </div>
+
+      <div id="recoveryError" style="display:none;padding:10px;background:var(--red-bg);border:1px solid var(--red);border-radius:6px;color:var(--red);font-size:12px;margin-top:10px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeRecoveryModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="attemptRecovery()">🔓 Récupérer le mot de passe</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale création rapide agent -->
+<div class="modal-overlay" id="quickAgentModalOverlay">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">➕ Créer un agent</div>
+        <div class="modal-subtitle">Création rapide depuis le valideur</div>
+      </div>
+      <button class="modal-close" onclick="closeQuickAgentModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">NOM</label>
+        <input class="form-control" id="qaName" placeholder="Nom de famille">
+      </div>
+      <div class="form-group">
+        <label class="form-label">PRÉNOM</label>
+        <input class="form-control" id="qaFirstName" placeholder="Prénom">
+      </div>
+      <div class="form-group">
+        <label class="form-label">SERVICE</label>
+        <input class="form-control" id="qaService" placeholder="Service/Département" list="qaServiceList">
+        <datalist id="qaServiceList"></datalist>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeQuickAgentModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="saveQuickAgent()">✓ Créer l'agent</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT EXCEL MODAL -->
+<div class="modal-overlay" id="importExcelModalOverlay">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">📥 Importer des données Excel</div>
+        <div class="modal-subtitle">Choisissez comment traiter les données importées</div>
+      </div>
+      <button class="modal-close" onclick="closeImportExcelModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="padding:12px;background:var(--blue-bg);border:1px solid var(--blue);border-radius:8px;margin-bottom:16px;font-size:12px;color:var(--text);line-height:1.6;">
+        <strong>ℹ️ Fichier sélectionné</strong><br>
+        <span id="importExcelFileName" style="font-family:monospace;font-size:11px;"></span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">MODE D'IMPORTATION</label>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <label style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--surface2);border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all 0.2s;"
+                 onmouseover="this.style.borderColor='var(--accent)'"
+                 onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='transparent'">
+            <input type="radio" name="importMode" value="merge" checked style="margin-top:2px;flex-shrink:0;" onchange="updateImportModeStyle()">
+            <div style="flex:1;">
+              <div style="font-weight:600;margin-bottom:4px;">🔄 Fusionner (recommandé)</div>
+              <div style="font-size:12px;color:var(--text3);line-height:1.5;">
+                Ajoute les nouvelles données et met à jour les existantes (basé sur les ID).<br>
+                Les données actuelles non présentes dans le fichier sont conservées.
+              </div>
+            </div>
+          </label>
+
+          <label style="display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--surface2);border-radius:8px;cursor:pointer;border:2px solid transparent;transition:all 0.2s;"
+                 onmouseover="this.style.borderColor='var(--red)'"
+                 onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='transparent'">
+            <input type="radio" name="importMode" value="replace" style="margin-top:2px;flex-shrink:0;" onchange="updateImportModeStyle()">
+            <div style="flex:1;">
+              <div style="font-weight:600;margin-bottom:4px;color:var(--red);">⚠️ Remplacer tout</div>
+              <div style="font-size:12px;color:var(--text3);line-height:1.5;">
+                Supprime toutes les données actuelles et les remplace par celles du fichier.<br>
+                <strong style="color:var(--red);">Action irréversible !</strong>
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeImportExcelModal()">Annuler</button>
+      <button class="btn btn-primary" onclick="confirmImportExcel()">📥 Importer</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="js/utils.js"></script>
+<script src="js/data.js"></script>
+<script src="js/security.js"></script>
+<script src="js/recovery.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/pagination.js"></script>
+<script src="js/files.js"></script>
+<script src="js/render.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
