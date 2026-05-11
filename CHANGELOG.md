@@ -1,6 +1,32 @@
-# Changelog
+﻿# Changelog
 
 Historique des modifications du Gestionnaire d'Habilitations.
+
+## [2.4.2] - 2026-05-11
+
+### Interface Agent
+
+#### Repli/dépli des habilitations dans la modale agent
+- **[js/ui.js](js/ui.js)** : ajout d'un toggle par habilitation (`▸`/`▾`) avec état local de repli par ligne
+- Les habilitations existantes sont maintenant ouvertes en mode replié à l'ouverture d'un agent
+- Les nouvelles habilitations ajoutées restent dépliées pour une saisie immédiate
+- **[css/styles.css](css/styles.css)** : styles dédiés au bouton de toggle et masquage des lignes repliées
+
+### Documentation
+- **[README.md](README.md)** : ajout du comportement de repli/dépli dans la section "Gestion des Agents"
+
+## [2.4.1] - 2026-05-08
+
+### Documentation
+
+#### Ajout de la section "Conformité aux standards de sécurité" dans le README
+- **[README.md:113-123](README.md#L113-L123)** : Nouvelle sous-section validant la conformité cryptographique
+- Mise en avant de l'utilisation d'AES-256-GCM (mode AEAD recommandé)
+- Documentation de PBKDF2 avec 200 000 itérations + SHA-256
+- Confirmation du salt et nonce aléatoires uniques
+- Validation de l'utilisation de Web Crypto API (standard W3C)
+- Précision sur le niveau de sécurité (équivalent standards industriels et gouvernementaux)
+- Point essentiel pour un gestionnaire d'habilitations destiné à l'administration publique
 
 ## [2.4.0] - 2026-05-08
 

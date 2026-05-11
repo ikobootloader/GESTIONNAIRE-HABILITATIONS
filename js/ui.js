@@ -1,9 +1,11 @@
-/**
+﻿/**
  * Module d'Interface Utilisateur
  * Gestion des modales, toasts, navigation, thème
  */
 
 const UI = {
+  // Etat de repli/depli des habilitations dans la modale agent
+  agentHabilCollapsed: [],
   /**
    * Bascule le thème clair/sombre
    */
@@ -184,6 +186,7 @@ const UI = {
         dateProchRevision: h.dateProchRevision,
         commentaires: h.commentaires || ''
       }));
+      this.agentHabilCollapsed = DataModel.state.agentHabilLines.map(() => true);
     } else {
       title.textContent = 'Nouvel agent';
       document.getElementById('aNom').value = '';
@@ -193,6 +196,7 @@ const UI = {
       document.getElementById('aService').value = '';
       document.getElementById('aPoste').value = '';
       DataModel.state.agentHabilLines = [];
+      this.agentHabilCollapsed = [];
     }
 
     this.renderAgentHabilLines();
@@ -330,14 +334,18 @@ const UI = {
   renderAgentHabilLines() {
     const container = document.getElementById('habilLines');
     const lines = DataModel.state.agentHabilLines;
+    this.agentHabilCollapsed = lines.map((_, idx) => this.agentHabilCollapsed[idx] === true);
     container.innerHTML = lines.map((line, idx) => `
       <div class="habil-line">
         <div class="habil-line-header">
           <div class="habil-line-num">${idx + 1}</div>
           <div class="habil-line-title">Habilitation ${DataModel.getLogicielName(line.logicielId)}</div>
-          <button class="habil-line-del" onclick="UI.removeAgentHabilLine(${idx})">✕</button>
+          <button class="habil-line-toggle" onclick="UI.toggleAgentHabilLine(${idx})" title="Replier/Deplier">
+            ${this.agentHabilCollapsed[idx] ? '▸' : '▾'}
+          </button>
+          <button class="habil-line-del" onclick="UI.removeAgentHabilLine(${idx})">×</button>
         </div>
-        <div class="form-grid">
+        <div class="form-grid ${this.agentHabilCollapsed[idx] ? 'is-collapsed' : ''}">
           <div class="form-group">
             <label class="form-label">LOGICIEL</label>
             <select class="form-control" onchange="UI.onAgentHabilLogicielChange(${idx}, this.value)">
@@ -402,7 +410,6 @@ const UI = {
       });
     }, 10);
   },
-
   addAgentHabilLine() {
     if (DataModel.logiciels.length === 0) {
       this.toast('Aucun logiciel disponible', 'error');
@@ -419,6 +426,7 @@ const UI = {
       dateProchRevision: Utils.addMonths(DataModel.params.revisionPeriod),
       commentaires: ''
     });
+    this.agentHabilCollapsed.push(false);
     this.renderAgentHabilLines();
 
     // Mettre à jour les suggestions pour la nouvelle ligne
@@ -430,6 +438,13 @@ const UI = {
 
   removeAgentHabilLine(idx) {
     DataModel.state.agentHabilLines.splice(idx, 1);
+    this.agentHabilCollapsed.splice(idx, 1);
+    this.renderAgentHabilLines();
+  },
+
+  toggleAgentHabilLine(idx) {
+    if (typeof this.agentHabilCollapsed[idx] === 'undefined') return;
+    this.agentHabilCollapsed[idx] = !this.agentHabilCollapsed[idx];
     this.renderAgentHabilLines();
   },
 
@@ -1174,3 +1189,5 @@ function addLogiciel() {
 function closeQuickAgentModal() { UI.closeQuickAgentModal(); }
 function saveQuickAgent() { UI.saveQuickAgent(); }
 function addHabilGroupe() { UI.addHabilGroupe(); }
+
+

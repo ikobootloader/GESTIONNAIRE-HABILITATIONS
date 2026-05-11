@@ -44,6 +44,7 @@ gestion_habilitations.html  # Point d'entrée HTML
 - Création, modification et suppression d'agents
 - Suivi des services, postes et emails
 - Attribution multiple d'habilitations par agent
+- Repli/dépli des habilitations dans la modale agent pour faciliter l'édition
 
 ### Gestion des Habilitations
 - Attribution de permissions par logiciel
@@ -109,6 +110,19 @@ Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de
 2. Cliquer sur "Mot de passe oublié ?"
 3. Saisir les 24 mots de la clé de récupération
 4. Le mot de passe est automatiquement récupéré et le fichier se charge
+
+### Conformité aux standards de sécurité
+
+L'implémentation cryptographique respecte **les recommandations de sécurité professionnelles** :
+
+- **✓ AES-256-GCM** : Mode recommandé avec authentification intégrée (AEAD)
+- **✓ PBKDF2** : Dérivation de clé robuste (200 000 itérations + SHA-256)
+- **✓ Salt aléatoire** : 16 octets uniques par fichier (via crypto.getRandomValues)
+- **✓ Nonce unique** : 12 octets aléatoires par chiffrement (jamais réutilisé)
+- **✓ Web Crypto API** : Bibliothèque standard W3C auditée
+- **✓ Mot de passe RAM uniquement** : Aucun stockage persistant du mot de passe
+
+**Niveau de sécurité** : Équivalent aux standards utilisés dans les produits industriels et gouvernementaux pour des fichiers locaux. La protection est efficace contre le vol de disque, la copie de fichier et l'accès hors session.
 
 ### Sauvegarde automatique avec persistence
 

@@ -418,8 +418,11 @@ textarea.form-control { resize:vertical; min-height:80px; }
 .habil-line-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
 .habil-line-num { width:22px; height:22px; border-radius:50%; background:var(--accent); color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
 .habil-line-title { font-size:13px; font-weight:600; color:var(--text); flex:1; }
+.habil-line-toggle { background:transparent; border:none; color:var(--text2); cursor:pointer; padding:4px 6px; border-radius:5px; font-size:13px; transition:all 0.15s; }
+.habil-line-toggle:hover { color:var(--accent); background:var(--accent-light); }
 .habil-line-del { background:transparent; border:none; color:var(--text3); cursor:pointer; padding:4px 6px; border-radius:5px; font-size:13px; transition:all 0.15s; }
 .habil-line-del:hover { color:var(--red); background:var(--red-bg); }
+.form-grid.is-collapsed { display:none; }
 .add-habil-btn { border:2px dashed var(--border); border-radius:10px; padding:12px; text-align:center; cursor:pointer; color:var(--text3); font-size:13px; transition:all 0.2s; background:transparent; width:100%; }
 .add-habil-btn:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-light); }
 
