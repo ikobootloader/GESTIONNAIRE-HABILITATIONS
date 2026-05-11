@@ -2,6 +2,55 @@
 
 Historique des modifications du Gestionnaire d'Habilitations.
 
+## [2.4.6] - 2026-05-11
+
+### Modale "Modifier l'agent"
+
+#### Champ GROUPES auto-extensible
+- **[js/ui.js](js/ui.js)** : remplacement du champ `GROUPES` par une zone multi-ligne auto-ajustable en hauteur
+- **[js/ui.js](js/ui.js)** : ajout de `autoGrowAgentHabilGroupesField(idx)` pour adapter la hauteur au contenu (croissance verticale bornée)
+- **[js/ui.js](js/ui.js)** : passage des suggestions de groupes en liste cliquable dédiée (compatible multi-ligne)
+- **[css/styles.css](css/styles.css)** : ajout de la classe `.agent-groupes-input` (min/max hauteur, resize manuel désactivé, scroll vertical)
+
+### Documentation
+- **[README.md](README.md)** : ajout du comportement d'agrandissement vertical automatique du champ `GROUPES`
+
+## [2.4.5] - 2026-05-11
+
+### Modale "Modifier l'agent"
+
+#### Correction autocomplétion multi-groupes
+- **[js/ui.js](js/ui.js)** : ajout de `onAgentHabilGroupesInput(idx, rawValue)` pour maintenir les suggestions de groupes du logiciel lors d'une saisie CSV
+- **[js/ui.js](js/ui.js)** : branchement `oninput` sur le champ `GROUPES` des lignes "Habilitations par logiciel"
+- Les suggestions restent actives après une virgule et proposent des valeurs complétées avec le préfixe déjà saisi (ex: `GROUPE_A, GROUPE_B`)
+
+### Documentation
+- **[README.md](README.md)** : ajout de la précision sur la saisie multi-groupes avec suggestions conservées
+
+## [2.4.4] - 2026-05-11
+
+### Modale "Modifier l'agent"
+
+#### Valideur par défaut logiciel appliqué systématiquement
+- **[js/ui.js](js/ui.js)** : ajout de `applyAgentHabilDefaultValideur(idx)` pour imposer le premier valideur par défaut du logiciel sur chaque ligne d'habilitation agent
+- Application automatique à l'ouverture de la modale agent, à l'ajout de ligne, au changement de logiciel et juste avant sauvegarde
+- Le champ `valideur` des lignes "Habilitations par logiciel" est désormais toujours synchronisé avec le premier valideur défini dans les paramètres du logiciel
+
+### Documentation
+- **[README.md](README.md)** : ajout de la règle métier de synchronisation automatique du valideur dans la section "Gestion des Habilitations"
+
+## [2.4.3] - 2026-05-11
+
+### Registre des habilitations
+
+#### Nouveaux filtres métier
+- **[gestion_habilitations.html](gestion_habilitations.html)** : ajout de 3 filtres dans la barre du registre (`Rôle`, `Permissions`, `Poste`)
+- **[js/render.js](js/render.js)** : extension du filtrage dans `renderHabilTable()` avec combinaison des critères `logiciel + rôle + permissions + poste + statut + recherche texte`
+- **[js/render.js](js/render.js)** : enrichissement de `populateHabilFilters()` pour peupler dynamiquement les nouvelles listes depuis `DataModel.params.roles`, `DataModel.params.permissions` et `DataModel.params.postes`
+
+### Documentation
+- **[README.md](README.md)** : ajout de la mention des filtres avancés dans la section "Gestion des Habilitations"
+
 ## [2.4.2] - 2026-05-11
 
 ### Interface Agent

@@ -140,6 +140,9 @@ const Renderer = {
   renderHabilTable() {
     const search = (document.getElementById('habilSearch').value || '').toLowerCase();
     const fLog = document.getElementById('habilFilterLogiciel').value;
+    const fRole = document.getElementById('habilFilterRole').value;
+    const fPermission = document.getElementById('habilFilterPermission').value;
+    const fPoste = document.getElementById('habilFilterPoste').value;
     const fStat = document.getElementById('habilFilterStatut').value;
 
     // Filtrage
@@ -148,7 +151,12 @@ const Renderer = {
       const l = DataModel.getLogiciel(h.logicielId) || {};
       const groupesStr = (h.groupes || []).join(' ');
       const txt = [a.nom, a.prenom, a.email, l.nom, h.role, h.permissions, groupesStr, h.valideur, h.statut].join(' ').toLowerCase();
-      return (!search || txt.includes(search)) && (!fLog || h.logicielId === fLog) && (!fStat || h.statut === fStat);
+      return (!search || txt.includes(search))
+        && (!fLog || h.logicielId === fLog)
+        && (!fRole || h.role === fRole)
+        && (!fPermission || h.permissions === fPermission)
+        && (!fPoste || a.poste === fPoste)
+        && (!fStat || h.statut === fStat);
     });
 
     // Tri
@@ -339,6 +347,27 @@ const Renderer = {
       sel.innerHTML = '<option value="">Tous les logiciels</option>' + DataModel.logiciels.map(l => `<option value="${Utils.esc(l.id)}">${Utils.esc(l.nom)}</option>`).join('');
       sel.value = cur;
     });
+
+    const roleSel = document.getElementById('habilFilterRole');
+    if (roleSel) {
+      const curRole = roleSel.value;
+      roleSel.innerHTML = '<option value="">Tous les rôles</option>' + DataModel.params.roles.map(r => `<option>${Utils.esc(r)}</option>`).join('');
+      roleSel.value = curRole;
+    }
+
+    const permissionSel = document.getElementById('habilFilterPermission');
+    if (permissionSel) {
+      const curPermission = permissionSel.value;
+      permissionSel.innerHTML = '<option value="">Toutes les permissions</option>' + DataModel.params.permissions.map(p => `<option>${Utils.esc(p)}</option>`).join('');
+      permissionSel.value = curPermission;
+    }
+
+    const posteSel = document.getElementById('habilFilterPoste');
+    if (posteSel) {
+      const curPoste = posteSel.value;
+      posteSel.innerHTML = '<option value="">Tous les postes</option>' + DataModel.params.postes.map(p => `<option>${Utils.esc(p)}</option>`).join('');
+      posteSel.value = curPoste;
+    }
   },
 
   /**

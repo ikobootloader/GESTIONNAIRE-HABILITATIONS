@@ -198,6 +198,9 @@
             <input type="text" id="habilSearch" placeholder="Agent, logiciel, rôle…" oninput="PaginationManager.reset('habilitations'); renderHabilTable()">
           </div>
           <select class="filter-select" id="habilFilterLogiciel" onchange="PaginationManager.reset('habilitations'); renderHabilTable()"><option value="">Tous les logiciels</option></select>
+          <select class="filter-select" id="habilFilterRole" onchange="PaginationManager.reset('habilitations'); renderHabilTable()"><option value="">Tous les rôles</option></select>
+          <select class="filter-select" id="habilFilterPermission" onchange="PaginationManager.reset('habilitations'); renderHabilTable()"><option value="">Toutes les permissions</option></select>
+          <select class="filter-select" id="habilFilterPoste" onchange="PaginationManager.reset('habilitations'); renderHabilTable()"><option value="">Tous les postes</option></select>
           <select class="filter-select" id="habilFilterStatut" onchange="PaginationManager.reset('habilitations'); renderHabilTable()">
             <option value="">Tous les statuts</option>
             <option>Actif</option><option>Inactif</option><option>Suspendu</option><option>En attente</option>

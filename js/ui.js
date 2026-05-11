@@ -186,6 +186,7 @@ const UI = {
         dateProchRevision: h.dateProchRevision,
         commentaires: h.commentaires || ''
       }));
+      DataModel.state.agentHabilLines.forEach((_, idx) => this.applyAgentHabilDefaultValideur(idx));
       this.agentHabilCollapsed = DataModel.state.agentHabilLines.map(() => true);
     } else {
       title.textContent = 'Nouvel agent';
@@ -232,6 +233,7 @@ const UI = {
     };
 
     if (DataModel.state.editingAgentId) {
+      DataModel.state.agentHabilLines.forEach((_, idx) => this.applyAgentHabilDefaultValideur(idx));
       // Mise à jour
       DataModel.updateAgent(DataModel.state.editingAgentId, agentData);
 
@@ -251,6 +253,7 @@ const UI = {
         });
       });
     } else {
+      DataModel.state.agentHabilLines.forEach((_, idx) => this.applyAgentHabilDefaultValideur(idx));
       // Création
       const newId = Utils.uid();
       DataModel.addAgent({ id: newId, ...agentData });
@@ -366,13 +369,14 @@ const UI = {
               ${DataModel.params.permissions.map(p => `<option ${p === line.permissions ? 'selected' : ''}>${Utils.esc(p)}</option>`).join('')}
             </select>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="position:relative;">
             <label class="form-label">GROUPES</label>
-            <input type="text" class="form-control" value="${(line.groupes || []).join(', ')}"
+            <textarea class="form-control agent-groupes-input"
+              id="groupesAgent_${idx}"
               placeholder="Ex: GRP_APP_LECTURE, GRP_APP_ADMIN"
-              list="groupesList_${idx}"
-              onchange="UI.updateAgentHabilLineGroupes(${idx}, this.value)">
-            <datalist id="groupesList_${idx}"></datalist>
+              oninput="UI.onAgentHabilGroupesInput(${idx}, this.value)"
+              onchange="UI.updateAgentHabilLineGroupes(${idx}, this.value)">${Utils.esc((line.groupes || []).join(', '))}</textarea>
+            <div id="groupesListSuggest_${idx}" class="valideur-autocomplete-suggestions"></div>
             <div style="font-size:11px;color:var(--text3);margin-top:3px;" id="groupesSuggest_${idx}"></div>
           </div>
           <div class="form-group">
@@ -407,9 +411,23 @@ const UI = {
     setTimeout(() => {
       lines.forEach((line, idx) => {
         this.updateAgentHabilGroupeSuggestions(idx, line.logicielId);
+        this.autoGrowAgentHabilGroupesField(idx);
       });
     }, 10);
   },
+
+  /**
+   * Applique le premier valideur par défaut du logiciel sur une ligne d'habilitation agent
+   * @param {number} idx - Index de la ligne
+   */
+  applyAgentHabilDefaultValideur(idx) {
+    const line = DataModel.state.agentHabilLines[idx];
+    if (!line) return;
+    const log = DataModel.getLogiciel(line.logicielId);
+    const defaultValideur = (log && Array.isArray(log.valideurs) && log.valideurs.length > 0) ? log.valideurs[0] : '';
+    line.valideur = defaultValideur;
+  },
+
   addAgentHabilLine() {
     if (DataModel.logiciels.length === 0) {
       this.toast('Aucun logiciel disponible', 'error');
@@ -426,6 +444,7 @@ const UI = {
       dateProchRevision: Utils.addMonths(DataModel.params.revisionPeriod),
       commentaires: ''
     });
+    this.applyAgentHabilDefaultValideur(DataModel.state.agentHabilLines.length - 1);
     this.agentHabilCollapsed.push(false);
     this.renderAgentHabilLines();
 
@@ -467,13 +486,90 @@ const UI = {
   },
 
   /**
+   * Met à jour les suggestions de groupes pendant la saisie (support multi-groupes CSV)
+   * @param {number} idx - Index de la ligne
+   * @param {string} rawValue - Valeur courante du champ groupes
+   */
+  onAgentHabilGroupesInput(idx, rawValue) {
+    const line = DataModel.state.agentHabilLines[idx];
+    if (!line) return;
+
+    // Garder le modèle synchronisé en continu pour éviter les écarts UI/état.
+    this.updateAgentHabilLineGroupes(idx, rawValue);
+
+    const log = DataModel.getLogiciel(line.logicielId);
+    const suggestList = document.getElementById(`groupesListSuggest_${idx}`);
+    if (!log || !suggestList) return;
+
+    const allGroupes = Array.isArray(log.groupes) ? log.groupes : [];
+    const parts = String(rawValue || '').split(',');
+    const currentToken = (parts.pop() || '').trim().toLowerCase();
+    const selected = parts.map(p => p.trim()).filter(p => p);
+    const selectedLower = selected.map(s => s.toLowerCase());
+    const basePrefix = selected.length ? selected.join(', ') + ', ' : '';
+
+    const candidates = allGroupes
+      .filter(g => !selectedLower.includes(String(g).toLowerCase()))
+      .filter(g => !currentToken || String(g).toLowerCase().includes(currentToken))
+      .slice(0, 20);
+
+    if (!candidates.length) {
+      suggestList.innerHTML = '';
+      this.autoGrowAgentHabilGroupesField(idx);
+      return;
+    }
+
+    suggestList.innerHTML = candidates.map(g =>
+      `<div class="valideur-suggestion-item" onclick='UI.selectAgentHabilGroupeSuggestion(${idx}, ${JSON.stringify(g)})'>
+        <div class="valideur-suggestion-name">${Utils.esc(g)}</div>
+      </div>`
+    ).join('');
+
+    this.autoGrowAgentHabilGroupesField(idx);
+  },
+
+  /**
+   * Sélectionne une suggestion de groupe pour une ligne d'habilitation agent
+   * @param {number} idx - Index de la ligne
+   * @param {string} groupe - Groupe sélectionné
+   */
+  selectAgentHabilGroupeSuggestion(idx, groupe) {
+    const input = document.getElementById(`groupesAgent_${idx}`);
+    const suggestList = document.getElementById(`groupesListSuggest_${idx}`);
+    if (!input) return;
+
+    const parts = String(input.value || '').split(',');
+    parts.pop(); // remplace le segment en cours de saisie
+    const selected = parts.map(p => p.trim()).filter(p => p);
+    const nextValue = (selected.length ? selected.join(', ') + ', ' : '') + groupe;
+
+    input.value = nextValue;
+    this.updateAgentHabilLineGroupes(idx, nextValue);
+    this.autoGrowAgentHabilGroupesField(idx);
+    if (suggestList) suggestList.innerHTML = '';
+  },
+
+  /**
+   * Ajuste automatiquement la hauteur du champ groupes d'une ligne agent
+   * @param {number} idx - Index de la ligne
+   */
+  autoGrowAgentHabilGroupesField(idx) {
+    const input = document.getElementById(`groupesAgent_${idx}`);
+    if (!input) return;
+    input.style.height = 'auto';
+    input.style.height = `${Math.min(input.scrollHeight, 140)}px`;
+  },
+
+  /**
    * Appelé quand le logiciel change dans une ligne d'habilitation agent
    * @param {number} idx - Index de la ligne
    * @param {string} logicielId - ID du logiciel sélectionné
    */
   onAgentHabilLogicielChange(idx, logicielId) {
     this.updateAgentHabilLine(idx, 'logicielId', logicielId);
+    this.applyAgentHabilDefaultValideur(idx);
     this.updateAgentHabilGroupeSuggestions(idx, logicielId);
+    this.renderAgentHabilLines();
   },
 
   /**

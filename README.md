@@ -50,6 +50,10 @@ gestion_habilitations.html  # Point d'entrée HTML
 - Attribution de permissions par logiciel
 - Rôles et groupes personnalisables
 - Suivi des valideurs et statuts
+- Filtres avancés dans le registre : logiciel, rôle, permissions, poste, statut
+- En modale agent (section "Habilitations par logiciel"), le valideur est automatiquement aligné sur le premier valideur par défaut du logiciel
+- En modale agent, la saisie multi-groupes (CSV) conserve les suggestions de groupes du logiciel après chaque virgule
+- En modale agent, le champ `GROUPES` s'agrandit automatiquement en hauteur selon le contenu saisi (avec limite visuelle)
 
 ### Révisions Automatiques
 - Alertes de révision paramétrables
