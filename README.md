@@ -111,7 +111,7 @@ Ce projet est sous licence MIT - voir le fichier [LICENSE](LICENSE) pour plus de
 
 **Comment récupérer un mot de passe oublié :**
 1. Charger le fichier `.habil`
-2. Cliquer sur "Mot de passe oublié ?"
+2. Cliquer sur "Mot de passe oublié "
 3. Saisir les 24 mots de la clé de récupération
 4. Le mot de passe est automatiquement récupéré et le fichier se charge
 
@@ -140,6 +140,19 @@ L'application utilise **File System Access API** + **IndexedDB** pour une expér
 - **Déliaison facile** : Bouton "🔓 Délier ce fichier" sur l'écran d'accueil pour supprimer le lien
 - **Pas de blocage** : L'utilisateur peut continuer à travailler pendant la sauvegarde
 - **Fallback** : Support du drag&drop classique avec rattachement optionnel
+
+## Où Sont Stockées Les Données 
+
+Pour éviter toute ambiguïté, voici le comportement exact de l'application :
+
+- **Source de vérité au chargement** : le fichier sélectionné (`.habil` ou `.xlsx`)
+- **Données métier en session** : chargées en **mémoire RAM** dans `DataModel` (agents, habilitations, logiciels, paramètres)
+- **Affichage navigateur** : rendu depuis l'état mémoire courant, pas relu du fichier à chaque affichage
+- **`localStorage`** : utilisé uniquement pour la préférence de thème (`habil_theme`)
+- **`IndexedDB`** : utilisé pour persister le **lien vers le fichier** (file handle), pas le contenu complet des données métier
+- **Mot de passe et clé de récupération** : conservés en mémoire de session uniquement, non persistés en clair
+
+En pratique, les modifications sont faites en mémoire puis sauvegardées vers le fichier.
 
 ### Export non chiffré
 

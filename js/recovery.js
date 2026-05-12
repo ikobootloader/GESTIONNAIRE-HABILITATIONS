@@ -204,12 +204,7 @@ IMPORTANT : Conservez cette clé en lieu sûr !
 Cette clé permet de récupérer l'accès à vos données en cas de perte du mot de passe.
 
 Clé de récupération (24 mots) :
-${mnemonic}
-
-Date de génération : ${new Date().toLocaleString('fr-FR')}
-
-⚠️ AVERTISSEMENT :
-- Ne partagez JAMAIS cette clé
+${mnemonic} ? Date de génération : ${new Date().toLocaleString('fr-FR')} ? ⚠️ AVERTISSEMENT : - Ne partagez JAMAIS cette clé
 - Conservez-la dans un endroit sécurisé (coffre-fort, gestionnaire de mots de passe, etc.)
 - Sans cette clé ET votre mot de passe, vos données seront définitivement perdues
 - Cette clé permet de récupérer votre mot de passe si vous l'oubliez

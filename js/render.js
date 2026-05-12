@@ -99,9 +99,7 @@ const Renderer = {
         poste: a.poste,
         email: a.email
       }[DataModel.state.agentSortCol] || '').toLowerCase();
-      list.sort((a, b) => DataModel.state.agentSortAsc ?
-        getV(a).localeCompare(getV(b), 'fr') :
-        getV(b).localeCompare(getV(a), 'fr'));
+      list.sort((a, b) => DataModel.state.agentSortAsc ? getV(a).localeCompare(getV(b), 'fr') :         getV(b).localeCompare(getV(a), 'fr'));
     }
 
     // Pagination
@@ -175,9 +173,7 @@ const Renderer = {
           revision: h.dateProchRevision || '9'
         })[DataModel.state.habilSortCol] || '';
       };
-      list.sort((a, b) => DataModel.state.habilSortAsc ?
-        getV(a).localeCompare(getV(b), 'fr') :
-        getV(b).localeCompare(getV(a), 'fr'));
+      list.sort((a, b) => DataModel.state.habilSortAsc ? getV(a).localeCompare(getV(b), 'fr') :         getV(b).localeCompare(getV(a), 'fr'));
     }
 
     // Pagination
@@ -198,8 +194,8 @@ const Renderer = {
       const isAlert = d <= DataModel.params.alertDays;
       const dStr = d === 9999 ? '—' : d <= 0 ? `<span style="color:var(--red);font-weight:600">Expiré</span>` : d <= 7 ? `<span style="color:var(--red)">J-${d}</span>` : d <= DataModel.params.alertDays ? `<span style="color:var(--orange)">J-${d}</span>` : `<span class="muted">J-${d}</span>`;
       return `<tr class="${isAlert ? 'alert-row' : ''}">
-        <td><strong>${Utils.esc(a.nom) || '?'} ${Utils.esc(a.prenom) || ''}</strong><br><span style="font-size:11px;color:var(--text3)">${Utils.esc(a.service) || ''}</span></td>
-        <td><span class="badge-logiciel">${Utils.esc(l.nom) || '?'}</span></td>
+        <td><strong>${Utils.esc(a.nom) || ''} ${Utils.esc(a.prenom) || ''}</strong><br><span style="font-size:11px;color:var(--text3)">${Utils.esc(a.service) || ''}</span></td>
+        <td><span class="badge-logiciel">${Utils.esc(l.nom) || ''}</span></td>
         <td class="muted">${Utils.esc(h.role) || '—'}</td>
         <td class="muted" style="font-size:12px">${Utils.esc(h.permissions) || '—'}</td>
         <td style="font-size:11px">${Utils.groupesBadges(h.groupes)}</td>
@@ -250,9 +246,9 @@ const Renderer = {
       const l = DataModel.getLogiciel(h.logicielId) || {};
       const ds = h._days <= 0 ? `<span style="color:var(--red);font-weight:700">Expiré (${Math.abs(h._days)}j)</span>` : h._days <= 7 ? `<span style="color:var(--red);font-weight:600">J-${h._days}</span>` : `<span style="color:var(--orange)">J-${h._days}</span>`;
       return `<tr>
-        <td><strong>${Utils.esc(a.nom) || '?'} ${Utils.esc(a.prenom) || ''}</strong></td>
+        <td><strong>${Utils.esc(a.nom) || ''} ${Utils.esc(a.prenom) || ''}</strong></td>
         <td class="muted">${Utils.esc(a.service) || '—'}</td>
-        <td><span class="badge-logiciel">${Utils.esc(l.nom) || '?'}</span></td>
+        <td><span class="badge-logiciel">${Utils.esc(l.nom) || ''}</span></td>
         <td class="muted">${Utils.esc(h.role) || '—'}</td>
         <td class="muted">${Utils.fmtDate(h.dateProchRevision)}</td>
         <td>${ds}</td>
@@ -298,7 +294,19 @@ const Renderer = {
   renderListEditor(containerId, key) {
     const c = document.getElementById(containerId);
     c.innerHTML = DataModel.params[key].map((item, i) => `
-      <div class="list-item"><span>${Utils.esc(item)}</span><button onclick="UI.removeParam('${key}',${i})">✕</button></div>
+      <div class="list-item"
+           draggable="true"
+           ondragstart="UI.startParamDrag(event, '${key}', ${i})"
+           ondragend="UI.endParamDrag()"
+           ondragover="UI.onParamDragOver(event)"
+           ondragenter="UI.onParamDragEnter(event)"
+           ondragleave="UI.onParamDragLeave(event)"
+           ondrop="UI.onParamDrop(event, '${key}', ${i})"
+           title="Glisser-déposer pour réorganiser">
+        <span class="list-item-drag-handle" aria-hidden="true">⋮⋮</span>
+        <span>${Utils.esc(item)}</span>
+        <button onclick="UI.removeParam('${key}',${i})">✕</button>
+      </div>
     `).join('') || '<div style="color:var(--text3);font-size:12px;padding:4px 0">Aucun élément</div>';
   },
 

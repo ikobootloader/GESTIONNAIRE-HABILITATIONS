@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -14,7 +14,7 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="css/styles.css">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2family=Material+Symbols+Outlined" rel="stylesheet">
 
 </head>
 <body>
@@ -41,7 +41,7 @@
     <div class="pwd-field" id="pwdField" style="display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <label id="pwdFieldLabel" style="margin:0;">MOT DE PASSE (REQUIS)</label>
-        <a href="javascript:void(0)" onclick="showRecoveryModal()" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">🔑 Mot de passe oublié ?</a>
+        <a href="javascript:void(0)" onclick="showRecoveryModal()" style="font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">🔑 Mot de passe oublié </a>
       </div>
       <div style="display:flex;gap:6px;align-items:stretch;">
         <input type="password" id="splashPwd" placeholder="Entrez votre mot de passe…"
@@ -50,7 +50,7 @@
         <button type="button"
           style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);border-radius:8px;padding:0 12px;cursor:pointer;font-size:14px;flex-shrink:0;"
           onmousedown="event.preventDefault()"
-          onclick="(function(btn){var i=document.getElementById('splashPwd');i.type=i.type==='password'?'text':'password';btn.textContent=i.type==='password'?'👁':'🙈';})(this)">👁</button>
+          onclick="(function(btn){var i=document.getElementById('splashPwd');i.type=i.type==='password''text':'password';btn.textContent=i.type==='password''👁':'🙈';})(this)">👁</button>
       </div>
       <div id="pwdLengthHint" style="font-size:11px;color:var(--text3);min-height:14px;"></div>
     </div>
@@ -70,7 +70,7 @@
       <div class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard')"><span class="tab-icon">◈</span> Tableau de bord</div>
       <div class="nav-tab" data-tab="agents" onclick="switchTab('agents')"><span class="tab-icon">👤</span> Agents</div>
       <div class="nav-tab" data-tab="habilitations" onclick="switchTab('habilitations')"><span class="tab-icon">☰</span> Habilitations</div>
-      <div class="nav-tab" data-tab="revisions" onclick="switchTab('revisions')"><span class="tab-icon">⏱</span> Révisions <span id="revBadge" class="tab-badge" style="display:none"></span></div>
+      <div class="nav-tab" data-tab="revisions" onclick="switchTab('revisions')"><span class="tab-icon">â±</span> Révisions <span id="revBadge" class="tab-badge" style="display:none"></span></div>
       <div class="nav-tab" data-tab="settings" onclick="switchTab('settings')"><span class="tab-icon">⚙</span> Paramètres</div>
     </nav>
     <div class="header-actions">
@@ -83,11 +83,11 @@
       </span>
       <button class="theme-toggle" onclick="toggleTheme()" title="Basculer le thème clair/sombre"><span class="theme-icon-sun">☀</span><span class="theme-icon-moon">☾</span></button>
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importExcelInput').click()" title="Importer des données depuis un fichier Excel">⬆</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportFile()" title="Exporter un audit en Excel (non chiffré)">⬇</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportFile()" title="Exporter un audit en Excel (non chiffré)">â¬‡</button>
       <button class="btn btn-primary btn-sm" onclick="saveFile()" id="saveBtn" title="Sauvegarder le registre">💾</button>
       <input type="file" id="importExcelInput" accept=".xlsx" style="display:none;" onchange="handleImportExcel(this)">
       <div style="width:1px;height:24px;background:var(--border);margin:0 2px;flex-shrink:0;"></div>
-      <button class="btn btn-ghost btn-sm" onclick="confirmDisconnect()" title="Fermer le registre et revenir à l'écran d'accueil" style="color:var(--text2);">⏏</button>
+      <button class="btn btn-ghost btn-sm" onclick="confirmDisconnect()" title="Fermer le registre et revenir à l'écran d'accueil" style="color:var(--text2);">â</button>
     </div>
   </header>
 
@@ -253,7 +253,7 @@
       </div>
     </div>
 
-    <!-- SETTINGS -->
+        <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div class="page-header">
         <div>
@@ -261,84 +261,108 @@
           <div class="page-subtitle">Configuration des référentiels et options de sécurité</div>
         </div>
       </div>
+
+      <div class="settings-tabs">
+        <button class="settings-tab active" data-settings-tab="logiciels" onclick="switchSettingsTab('logiciels')">Logiciels métiers</button>
+        <button class="settings-tab" data-settings-tab="services" onclick="switchSettingsTab('services')">Services / Départements</button>
+        <button class="settings-tab" data-settings-tab="postes" onclick="switchSettingsTab('postes')">Intitulés de postes</button>
+        <button class="settings-tab" data-settings-tab="roles" onclick="switchSettingsTab('roles')">Rôles disponibles</button>
+        <button class="settings-tab" data-settings-tab="permissions" onclick="switchSettingsTab('permissions')">Niveaux de permissions</button>
+        <button class="settings-tab" data-settings-tab="securite" onclick="switchSettingsTab('securite')">Sécurité du fichier</button>
+        <button class="settings-tab" data-settings-tab="revisions" onclick="switchSettingsTab('revisions')">Révisions</button>
+      </div>
+
       <div class="settings-grid">
-        <!-- Logiciels -->
-        <div class="settings-card full">
-          <h3>💻 Logiciels métiers</h3>
-          <p style="font-size:12px;color:var(--text3);margin-bottom:14px;">Définissez les logiciels pour lesquels des habilitations peuvent être accordées. Pour chaque logiciel, vous pouvez renseigner un ou plusieurs responsables valideurs par défaut.</p>
-          <div id="logicielsEditor"></div>
-          <button class="btn btn-primary btn-sm" onclick="addLogiciel()" style="margin-top:10px;">＋ Ajouter un logiciel</button>
-        </div>
-
-        <!-- Référentiels simples -->
-        <div class="settings-card">
-          <h3>🏢 Services / Départements</h3>
-          <div class="list-editor" id="servicesEditor"></div>
-          <div class="add-item-row">
-            <input type="text" id="newService" placeholder="Nouveau service…">
-            <button class="btn btn-primary btn-sm" onclick="addParam('services','newService')">＋</button>
-          </div>
-        </div>
-        <div class="settings-card">
-          <h3>📋 Intitulés de postes</h3>
-          <div class="list-editor" id="postesEditor"></div>
-          <div class="add-item-row">
-            <input type="text" id="newPoste" placeholder="Nouveau poste…">
-            <button class="btn btn-primary btn-sm" onclick="addParam('postes','newPoste')">＋</button>
-          </div>
-        </div>
-        <div class="settings-card">
-          <h3>🎭 Rôles disponibles</h3>
-          <div class="list-editor" id="rolesEditor"></div>
-          <div class="add-item-row">
-            <input type="text" id="newRole" placeholder="Nouveau rôle…">
-            <button class="btn btn-primary btn-sm" onclick="addParam('roles','newRole')">＋</button>
-          </div>
-        </div>
-        <div class="settings-card">
-          <h3>🔐 Niveaux de permissions</h3>
-          <div class="list-editor" id="permissionsEditor"></div>
-          <div class="add-item-row">
-            <input type="text" id="newPermission" placeholder="Nouveau niveau…">
-            <button class="btn btn-primary btn-sm" onclick="addParam('permissions','newPermission')">＋</button>
+        <div class="settings-panel active" data-settings-panel="logiciels">
+          <div class="settings-card full">
+            <h3>💻 Logiciels métiers</h3>
+            <p style="font-size:12px;color:var(--text3);margin-bottom:14px;">Définissez les logiciels pour lesquels des habilitations peuvent être accordées. Pour chaque logiciel, vous pouvez renseigner un ou plusieurs responsables valideurs par défaut.</p>
+            <div id="logicielsEditor"></div>
+            <button class="btn btn-primary btn-sm" onclick="addLogiciel()" style="margin-top:10px;">＋ Ajouter un logiciel</button>
           </div>
         </div>
 
-        <!-- Sécurité -->
-        <div class="settings-card">
-          <h3>🔒 Sécurité du fichier</h3>
-          <div id="securityStatus" class="security-status">
-            <div class="security-status-icon" id="secStatusIcon">🔓</div>
-            <div>
-              <div class="security-status-title" id="secStatusTitle">Fichier non chiffré</div>
-              <div class="security-status-sub" id="secStatusSub">Données stockées en clair (.xlsx).</div>
+        <div class="settings-panel" data-settings-panel="services">
+          <div class="settings-card">
+            <h3>🏢 Services / Départements</h3>
+            <div class="list-editor" id="servicesEditor"></div>
+            <div class="add-item-row">
+              <input type="text" id="newService" placeholder="Nouveau service…">
+              <button class="btn btn-primary btn-sm" onclick="addParam('services','newService')">＋</button>
             </div>
           </div>
-          <div id="securityPendingWarn" class="security-warn" style="display:none;">
-            <span style="font-size:16px;">⚠️</span>
-            <div><strong>Changement en attente</strong><br>
-            <span style="font-size:12px;">Cliquez sur <strong>💾 Sauvegarder</strong> pour appliquer.</span></div>
-          </div>
-          <div id="securityActions" style="display:flex;flex-direction:column;gap:10px;"></div>
-          <div class="divider"></div>
-          <div style="font-size:12px;color:var(--text3);line-height:1.6;">
-            Chiffrement <strong>AES-256-GCM</strong> + <strong>PBKDF2</strong> (200 000 itérations).<br>
-            Extension <code>.habil</code> (chiffré) · <code>.xlsx</code> (clair).
+        </div>
+
+        <div class="settings-panel" data-settings-panel="postes">
+          <div class="settings-card">
+            <h3>📋 Intitulés de postes</h3>
+            <div class="list-editor" id="postesEditor"></div>
+            <div class="add-item-row">
+              <input type="text" id="newPoste" placeholder="Nouveau poste…">
+              <button class="btn btn-primary btn-sm" onclick="addParam('postes','newPoste')">＋</button>
+            </div>
           </div>
         </div>
 
-        <!-- Paramètres révision -->
-        <div class="settings-card">
-          <h3>⏱ Révisions</h3>
-          <div class="form-group" style="margin-bottom:12px;">
-            <div class="form-label">PÉRIODICITÉ PAR DÉFAUT (mois)</div>
-            <input type="number" class="form-control" id="revisionPeriod" value="12" min="1" max="60"
-              onchange="params.revisionPeriod=parseInt(this.value)||12; markUnsaved();">
+        <div class="settings-panel" data-settings-panel="roles">
+          <div class="settings-card">
+            <h3>🎭 Rôles disponibles</h3>
+            <div class="list-editor" id="rolesEditor"></div>
+            <div class="add-item-row">
+              <input type="text" id="newRole" placeholder="Nouveau rôle…">
+              <button class="btn btn-primary btn-sm" onclick="addParam('roles','newRole')">＋</button>
+            </div>
           </div>
-          <div class="form-group">
-            <div class="form-label">ALERTE AVANT EXPIRATION (jours)</div>
-            <input type="number" class="form-control" id="alertDays" value="30" min="1" max="180"
-              onchange="params.alertDays=parseInt(this.value)||30; markUnsaved(); renderStats(); updateRevBadge();">
+        </div>
+
+        <div class="settings-panel" data-settings-panel="permissions">
+          <div class="settings-card">
+            <h3>🔐 Niveaux de permissions</h3>
+            <div class="list-editor" id="permissionsEditor"></div>
+            <div class="add-item-row">
+              <input type="text" id="newPermission" placeholder="Nouveau niveau…">
+              <button class="btn btn-primary btn-sm" onclick="addParam('permissions','newPermission')">＋</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-panel" data-settings-panel="securite">
+          <div class="settings-card">
+            <h3>🔒 Sécurité du fichier</h3>
+            <div id="securityStatus" class="security-status">
+              <div class="security-status-icon" id="secStatusIcon">🔓</div>
+              <div>
+                <div class="security-status-title" id="secStatusTitle">Fichier non chiffré</div>
+                <div class="security-status-sub" id="secStatusSub">Données stockées en clair (.xlsx).</div>
+              </div>
+            </div>
+            <div id="securityPendingWarn" class="security-warn" style="display:none;">
+              <span style="font-size:16px;">⚠️</span>
+              <div><strong>Changement en attente</strong><br>
+              <span style="font-size:12px;">Cliquez sur <strong>💾 Sauvegarder</strong> pour appliquer.</span></div>
+            </div>
+            <div id="securityActions" style="display:flex;flex-direction:column;gap:10px;"></div>
+            <div class="divider"></div>
+            <div style="font-size:12px;color:var(--text3);line-height:1.6;">
+              Chiffrement <strong>AES-256-GCM</strong> + <strong>PBKDF2</strong> (200 000 itérations).<br>
+              Extension <code>.habil</code> (chiffré) · <code>.xlsx</code> (clair).
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-panel" data-settings-panel="revisions">
+          <div class="settings-card">
+            <h3>⏱ Révisions</h3>
+            <div class="form-group" style="margin-bottom:12px;">
+              <div class="form-label">PÉRIODICITÉ PAR DÉFAUT (mois)</div>
+              <input type="number" class="form-control" id="revisionPeriod" value="12" min="1" max="60"
+                onchange="params.revisionPeriod=parseInt(this.value)||12; markUnsaved();">
+            </div>
+            <div class="form-group">
+              <div class="form-label">ALERTE AVANT EXPIRATION (jours)</div>
+              <input type="number" class="form-control" id="alertDays" value="30" min="1" max="180"
+                onchange="params.alertDays=parseInt(this.value)||30; markUnsaved(); renderStats(); updateRevBadge();">
+            </div>
           </div>
         </div>
       </div>
@@ -369,7 +393,7 @@
             <input class="form-control" id="aPrenom" placeholder="Prénom">
           </div>
           <div class="form-group">
-            <label class="form-label">EMAIL <span class="required">*</span></label>
+            <label class="form-label">EMAIL</label>
             <input class="form-control" id="aEmail" type="email" placeholder="prenom.nom@…">
           </div>
           <div class="form-group">
@@ -501,7 +525,7 @@
         <input type="password" class="form-control" id="passwordInput2" placeholder="Ressaisir le mot de passe" autocomplete="new-password">
       </div>
       <div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--text3);line-height:1.6;">
-        <strong>⚠️ Important :</strong><br>
+        <strong>âš ï¸ Important :</strong><br>
         • Le mot de passe n'est jamais stocké<br>
         • Il sera nécessaire à chaque ouverture du fichier<br>
         • Une clé de récupération sera générée pour récupérer vos données en cas d'oubli
@@ -525,7 +549,7 @@
     </div>
     <div class="modal-body">
       <div style="padding:14px;background:var(--orange-bg);border:2px solid var(--orange);border-radius:10px;margin-bottom:16px;">
-        <strong style="color:var(--orange);font-size:14px;">⚠️ TRÈS IMPORTANT</strong>
+        <strong style="color:var(--orange);font-size:14px;">âš ï¸ TRÈS IMPORTANT</strong>
         <p style="margin:8px 0 0 0;font-size:13px;line-height:1.6;color:var(--text);">
           Cette clé permet de récupérer votre mot de passe en cas d'oubli.<br>
           <strong>Sans cette clé, vos données seront définitivement perdues si vous oubliez votre mot de passe.</strong>
@@ -566,7 +590,7 @@
     </div>
     <div class="modal-body">
       <div style="padding:12px;background:var(--blue-bg);border:1px solid var(--blue);border-radius:8px;margin-bottom:16px;font-size:12px;color:var(--text);line-height:1.6;">
-        <strong>ℹ️ Récupération de mot de passe</strong><br>
+        <strong>â„¹ï¸ Récupération de mot de passe</strong><br>
         Saisissez les 24 mots de votre clé de récupération. Votre mot de passe sera automatiquement récupéré.
       </div>
 
@@ -629,7 +653,7 @@
     </div>
     <div class="modal-body">
       <div style="padding:12px;background:var(--blue-bg);border:1px solid var(--blue);border-radius:8px;margin-bottom:16px;font-size:12px;color:var(--text);line-height:1.6;">
-        <strong>ℹ️ Fichier sélectionné</strong><br>
+        <strong>â„¹ï¸ Fichier sélectionné</strong><br>
         <span id="importExcelFileName" style="font-family:monospace;font-size:11px;"></span>
       </div>
 
@@ -654,7 +678,7 @@
                  onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='transparent'">
             <input type="radio" name="importMode" value="replace" style="margin-top:2px;flex-shrink:0;" onchange="updateImportModeStyle()">
             <div style="flex:1;">
-              <div style="font-weight:600;margin-bottom:4px;color:var(--red);">⚠️ Remplacer tout</div>
+              <div style="font-weight:600;margin-bottom:4px;color:var(--red);">âš ï¸ Remplacer tout</div>
               <div style="font-size:12px;color:var(--text3);line-height:1.5;">
                 Supprime toutes les données actuelles et les remplace par celles du fichier.<br>
                 <strong style="color:var(--red);">Action irréversible !</strong>

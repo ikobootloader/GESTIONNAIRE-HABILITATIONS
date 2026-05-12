@@ -4,6 +4,15 @@ Historique des modifications du Gestionnaire d'Habilitations.
 
 ## [2.4.6] - 2026-05-11
 
+## [2.4.7] - 2026-05-12
+
+### Modale "Modifier l'agent"
+
+#### Auto-remplissage du champ GROUPES si unique
+- **[js/ui.js](js/ui.js)** : ajout de `applyAgentHabilDefaultGroupe(idx, overwriteExisting)` pour appliquer automatiquement le groupe du logiciel lorsqu'un seul groupe est défini
+- Application automatique lors de l'ajout d'une ligne d'habilitation agent
+- Application lors du changement de logiciel dans une ligne, avec remplacement cohérent du groupe selon le logiciel sélectionné
+
 ### Modale "Modifier l'agent"
 
 #### Champ GROUPES auto-extensible
@@ -264,7 +273,7 @@ Historique des modifications du Gestionnaire d'Habilitations.
 - **Récupération autonome** : Pas besoin de contact avec un support
 
 #### Interface de récupération
-- **Lien "Mot de passe oublié ?"** : Accessible depuis l'écran de chargement
+- **Lien "Mot de passe oublié "** : Accessible depuis l'écran de chargement
 - **Modale de saisie** : Interface claire pour saisir les 24 mots
 - **Validation robuste** : Vérification du format et de la validité de la clé
 - **Récupération automatique** : Le fichier se charge automatiquement après récupération

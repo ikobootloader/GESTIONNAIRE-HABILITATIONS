@@ -6,6 +6,10 @@
 const UI = {
   // Etat de repli/depli des habilitations dans la modale agent
   agentHabilCollapsed: [],
+  // État temporaire du drag-and-drop des listes de paramètres
+  paramDragState: null,
+  // Onglet actif de la page Paramètres
+  activeSettingsTab: 'logiciels',
   /**
    * Bascule le thème clair/sombre
    */
@@ -24,8 +28,29 @@ const UI = {
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
 
-    document.querySelector(`.nav-tab[data-tab="${tabName}"]`)?.classList.add('active');
-    document.getElementById(`page-${tabName}`)?.classList.add('active');
+    document.querySelector(`.nav-tab[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById(`page-${tabName}`).classList.add('active');
+
+    // Restaurer l'onglet interne actif de la page Paramètres
+    if (tabName === 'settings') {
+      this.switchSettingsTab(this.activeSettingsTab);
+    }
+  },
+
+  /**
+   * Change l'onglet interne de la page Paramètres
+   * @param {string} tabKey - Clé d'onglet paramètres
+   */
+  switchSettingsTab(tabKey) {
+    this.activeSettingsTab = tabKey || 'logiciels';
+
+    document.querySelectorAll('.settings-tab').forEach(el => {
+      el.classList.toggle('active', el.dataset.settingsTab === this.activeSettingsTab);
+    });
+
+    document.querySelectorAll('.settings-panel').forEach(el => {
+      el.classList.toggle('active', el.dataset.settingsPanel === this.activeSettingsTab);
+    });
   },
 
   /**
@@ -52,7 +77,7 @@ const UI = {
   confirm(options) {
     const overlay = document.getElementById('confirmOverlay');
     document.getElementById('confirmTitle').textContent = options.title || 'Confirmation';
-    document.getElementById('confirmMsg').textContent = options.message || 'Êtes-vous sûr ?';
+    document.getElementById('confirmMsg').textContent = options.message || 'Êtes-vous sûr ';
 
     overlay.classList.add('show');
 
@@ -219,8 +244,8 @@ const UI = {
     const prenom = document.getElementById('aPrenom').value.trim();
     const email = document.getElementById('aEmail').value.trim();
 
-    if (!nom || !prenom || !email) {
-      this.toast('Veuillez remplir tous les champs obligatoires', 'error');
+    if (!nom || !prenom) {
+      this.toast('Le nom et le prénom sont obligatoires', 'error');
       return;
     }
 
@@ -289,7 +314,7 @@ const UI = {
 
     this.confirm({
       title: "Supprimer l'agent",
-      message: `Supprimer définitivement ${agent.nom} ${agent.prenom} et toutes ses habilitations ?`,
+      message: `Supprimer définitivement ${agent.nom} ${agent.prenom} et toutes ses habilitations `,
       onConfirm: () => {
         DataModel.deleteAgent(agentId);
         DataModel.markUnsaved();
@@ -428,6 +453,29 @@ const UI = {
     line.valideur = defaultValideur;
   },
 
+  /**
+   * Applique automatiquement le groupe par défaut si un seul groupe existe
+   * pour le logiciel de la ligne d'habilitation agent.
+   * @param {number} idx - Index de la ligne
+   * @param {boolean} overwriteExisting - true pour remplacer la valeur existante
+   */
+  applyAgentHabilDefaultGroupe(idx, overwriteExisting = false) {
+    const line = DataModel.state.agentHabilLines[idx];
+    if (!line) return;
+
+    const hasExistingGroupes = Array.isArray(line.groupes) && line.groupes.length > 0;
+    if (hasExistingGroupes && !overwriteExisting) return;
+
+    const log = DataModel.getLogiciel(line.logicielId);
+    const defaultGroupes = (log && Array.isArray(log.groupes)) ? log.groupes.filter(g => g && g.trim()) : [];
+
+    if (defaultGroupes.length === 1) {
+      line.groupes = [defaultGroupes[0]];
+    } else if (overwriteExisting) {
+      line.groupes = [];
+    }
+  },
+
   addAgentHabilLine() {
     if (DataModel.logiciels.length === 0) {
       this.toast('Aucun logiciel disponible', 'error');
@@ -441,10 +489,11 @@ const UI = {
       groupes: [],
       statut: 'Actif',
       valideur: '',
-      dateProchRevision: Utils.addMonths(DataModel.params.revisionPeriod),
+      dateProchRevision: '',
       commentaires: ''
     });
     this.applyAgentHabilDefaultValideur(DataModel.state.agentHabilLines.length - 1);
+    this.applyAgentHabilDefaultGroupe(DataModel.state.agentHabilLines.length - 1);
     this.agentHabilCollapsed.push(false);
     this.renderAgentHabilLines();
 
@@ -568,6 +617,7 @@ const UI = {
   onAgentHabilLogicielChange(idx, logicielId) {
     this.updateAgentHabilLine(idx, 'logicielId', logicielId);
     this.applyAgentHabilDefaultValideur(idx);
+    this.applyAgentHabilDefaultGroupe(idx, true);
     this.updateAgentHabilGroupeSuggestions(idx, logicielId);
     this.renderAgentHabilLines();
   },
@@ -702,7 +752,7 @@ const UI = {
    */
   addHabilGroupe() {
     const input = document.getElementById('hGroupeInput');
-    const val = input?.value.trim();
+    const val = input.value.trim();
     if (!val) return;
 
     if (!DataModel.state.currentHabilGroupes) {
@@ -732,7 +782,7 @@ const UI = {
   confirmDeleteHabil(habilId) {
     this.confirm({
       title: "Supprimer l'habilitation",
-      message: 'Supprimer définitivement cette habilitation ?',
+      message: 'Supprimer définitivement cette habilitation ',
       onConfirm: () => {
         DataModel.deleteHabilitation(habilId);
         DataModel.markUnsaved();
@@ -756,6 +806,94 @@ const UI = {
     if (!val) return;
     DataModel.params[key].push(val);
     input.value = '';
+    DataModel.markUnsaved();
+    Renderer.renderSettings();
+    this.updateSaveIndicator();
+  },
+
+  /**
+   * Démarre un drag d'item dans une liste de paramètres
+   * @param {DragEvent} event - Événement dragstart
+   * @param {string} key - Clé du paramètre
+   * @param {number} idx - Index de l'item
+   */
+  startParamDrag(event, key, idx) {
+    this.paramDragState = { key, from: idx };
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', `${key}:${idx}`);
+    }
+    event.currentTarget.classList.add('is-dragging');
+  },
+
+  /**
+   * Autorise le drop sur un item
+   * @param {DragEvent} event - Événement dragover
+   */
+  onParamDragOver(event) {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = 'move';
+    }
+  },
+
+  /**
+   * Gère l'entrée de survol pendant le drag
+   * @param {DragEvent} event - Événement dragenter
+   */
+  onParamDragEnter(event) {
+    event.currentTarget.classList.add('drag-over');
+  },
+
+  /**
+   * Gère la sortie de survol pendant le drag
+   * @param {DragEvent} event - Événement dragleave
+   */
+  onParamDragLeave(event) {
+    event.currentTarget.classList.remove('drag-over');
+  },
+
+  /**
+   * Termine un drag (nettoyage visuel)
+   */
+  endParamDrag() {
+    document.querySelectorAll('.list-item.is-dragging, .list-item.drag-over')
+      .forEach(el => el.classList.remove('is-dragging', 'drag-over'));
+  },
+
+  /**
+   * Dépose un item et réordonne la liste de paramètres
+   * @param {DragEvent} event - Événement drop
+   * @param {string} key - Clé du paramètre
+   * @param {number} toIdx - Index cible
+   */
+  onParamDrop(event, key, toIdx) {
+    event.preventDefault();
+    event.currentTarget.classList.remove('drag-over');
+
+    const drag = this.paramDragState;
+    this.paramDragState = null;
+
+    if (!drag || drag.key !== key) return;
+    if (drag.from === toIdx) return;
+
+    this.reorderParam(key, drag.from, toIdx);
+  },
+
+  /**
+   * Réordonne les items d'un paramètre sans changer le format des données
+   * @param {string} key - Clé du paramètre
+   * @param {number} fromIdx - Index source
+   * @param {number} toIdx - Index cible
+   */
+  reorderParam(key, fromIdx, toIdx) {
+    const list = DataModel.params[key];
+    if (!Array.isArray(list)) return;
+    if (fromIdx < 0 || toIdx < 0 || fromIdx >= list.length || toIdx >= list.length) return;
+
+    const [moved] = list.splice(fromIdx, 1);
+    list.splice(toIdx, 0, moved);
+
     DataModel.markUnsaved();
     Renderer.renderSettings();
     this.updateSaveIndicator();
@@ -1043,9 +1181,9 @@ const UI = {
    * Sauvegarde l'agent créé rapidement
    */
   saveQuickAgent() {
-    const nom = document.getElementById('qaName')?.value.trim();
-    const prenom = document.getElementById('qaFirstName')?.value.trim();
-    const service = document.getElementById('qaService')?.value.trim();
+    const nom = document.getElementById('qaName').value.trim();
+    const prenom = document.getElementById('qaFirstName').value.trim();
+    const service = document.getElementById('qaService').value.trim();
 
     if (!nom) {
       this.toast('Le nom est obligatoire', 'error');
@@ -1187,6 +1325,7 @@ const UI = {
 // Fonctions globales pour compatibilité onclick
 function toggleTheme() { UI.toggleTheme(); }
 function switchTab(tab) { UI.switchTab(tab); }
+function switchSettingsTab(tab) { UI.switchSettingsTab(tab); }
 function openAgentModal(id) { UI.openAgentModal(id); }
 function closeAgentModal() { UI.closeAgentModal(); }
 function saveAgent() { UI.saveAgent(); }
@@ -1195,15 +1334,15 @@ function closeHabilModal() {
   document.getElementById('habilModalOverlay').classList.remove('show');
 }
 function saveHabil() {
-  const agentId = document.getElementById('hAgent')?.value;
-  const logicielId = document.getElementById('hLogiciel')?.value;
-  const role = document.getElementById('hRole')?.value || '';
-  const permissions = document.getElementById('hPermissions')?.value || '';
-  const statut = document.getElementById('hStatut')?.value || 'Actif';
-  const valideur = (document.getElementById('hValideur')?.value || '').trim();
-  const dateProchRevision = document.getElementById('hRevision')?.value;
-  const dateDerniereValidation = document.getElementById('hDerniereValidation')?.value;
-  const commentaires = (document.getElementById('hCommentaires')?.value || '').trim();
+  const agentId = document.getElementById('hAgent').value;
+  const logicielId = document.getElementById('hLogiciel').value;
+  const role = document.getElementById('hRole').value || '';
+  const permissions = document.getElementById('hPermissions').value || '';
+  const statut = document.getElementById('hStatut').value || 'Actif';
+  const valideur = (document.getElementById('hValideur').value || '').trim();
+  const dateProchRevision = document.getElementById('hRevision').value;
+  const dateDerniereValidation = document.getElementById('hDerniereValidation').value;
+  const commentaires = (document.getElementById('hCommentaires').value || '').trim();
 
   if (!agentId || !logicielId) {
     UI.toast('Agent et logiciel sont obligatoires', 'error');
@@ -1245,7 +1384,7 @@ function closeConfirm() {
 function addParam(key, inputId) { UI.addParam(key, inputId); }
 function addHabilLine() { UI.addAgentHabilLine(); }
 function onHabilLogicielChange() {
-  const logId = document.getElementById('hLogiciel')?.value;
+  const logId = document.getElementById('hLogiciel').value;
   if (!logId) return;
   const log = DataModel.getLogiciel(logId);
 
@@ -1285,5 +1424,6 @@ function addLogiciel() {
 function closeQuickAgentModal() { UI.closeQuickAgentModal(); }
 function saveQuickAgent() { UI.saveQuickAgent(); }
 function addHabilGroupe() { UI.addHabilGroupe(); }
+
 
 

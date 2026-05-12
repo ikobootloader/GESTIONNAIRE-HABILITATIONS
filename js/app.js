@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Module Principal - Orchestrateur de l'Application
  * Initialisation, gestion du splash screen, sauvegarde
  */
@@ -66,7 +66,7 @@ const App = {
         DataModel.state.currentFile = null;
       }
     } catch (error) {
-      console.error('[App] ✗ Erreur lors de la restauration du handle:', error);
+      console.error('[App] ✕ Erreur lors de la restauration du handle:', error);
       await PersistentStorage.clearFileHandle();
     }
   },
@@ -191,7 +191,7 @@ const App = {
         // Si fichier .habil et FSA disponible, demander le handle pour sauvegarde auto
         if (FileManager.isFSAAvailable()) {
           UI.confirm({
-            title: 'Activer la sauvegarde automatique ?',
+            title: 'Activer la sauvegarde automatique ',
             message: 'Pour activer la sauvegarde automatique, sélectionnez l\'emplacement de ce fichier.',
             onConfirm: async () => {
               const h = await FileManager.pickFileHandle();
@@ -409,8 +409,8 @@ const App = {
     } else {
       // Pas de handle, proposer de télécharger le fichier maintenant
       UI.confirm({
-        title: 'Sauvegarder le fichier maintenant ?',
-        message: 'Voulez-vous télécharger le fichier maintenant ? Sinon, vos données seront perdues à la fermeture.',
+        title: 'Sauvegarder le fichier maintenant ',
+        message: 'Voulez-vous télécharger le fichier maintenant  Sinon, vos données seront perdues à la fermeture.',
         onConfirm: async () => {
           await FileManager.downloadFile({
             filename: DataModel.state.currentFile,
@@ -591,7 +591,6 @@ const App = {
     } else if (!encrypt && !finalFilename.endsWith('.xlsx')) {
       finalFilename += '.xlsx';
     }
-
     const password = encrypt ? await this.promptPassword() : null;
     if (encrypt && !password) return;
 
@@ -668,12 +667,21 @@ async function saveFile() {
   }
 }
 function exportFile() {
-  FileManager.downloadExcel(DataModel.exportData(), 'export_habilitations_' + Utils.today() + '.xlsx');
+  const includeAgentLabel = window.confirm(
+    'Inclure une colonne "Agent" (Nom Prénom) dans la feuille Habilitations \n\n' +
+    'Oui : export lisible en clair (AgentID conservé)\n' +
+    'Non : export standard'
+  );
+  FileManager.downloadExcel(
+    DataModel.exportData(),
+    'export_habilitations_' + Utils.today() + '.xlsx',
+    { includeAgentLabel }
+  );
 }
 function confirmDisconnect() {
   if (DataModel.state.unsaved) {
     UI.confirm({
-      title: 'Fermer sans sauvegarder ?',
+      title: 'Fermer sans sauvegarder ',
       message: 'Des modifications non sauvegardées seront perdues.',
       onConfirm: () => location.reload()
     });
@@ -833,7 +841,7 @@ async function confirmImportExcel() {
   }
 
   // Récupérer le mode d'import sélectionné
-  const mode = document.querySelector('input[name="importMode"]:checked')?.value || 'merge';
+  const mode = document.querySelector('input[name="importMode"]:checked').value || 'merge';
 
   try {
     // Lire le fichier Excel
@@ -842,9 +850,9 @@ async function confirmImportExcel() {
 
     // Compter les éléments importés
     const counts = {
-      agents: importedData.agents?.length || 0,
-      logiciels: importedData.logiciels?.length || 0,
-      habilitations: importedData.habilitations?.length || 0
+      agents: importedData.agents.length || 0,
+      logiciels: importedData.logiciels.length || 0,
+      habilitations: importedData.habilitations.length || 0
     };
 
     if (mode === 'replace') {

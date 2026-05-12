@@ -169,8 +169,10 @@ const FileManager = {
    * Exporte en Excel (.xlsx)
    * @param {Object} data - Données à exporter
    * @param {string} filename - Nom du fichier
+   * @param {Object} options - Options d'export
    */
-  async downloadExcel(data, filename) {
+  async downloadExcel(data, filename, options = {}) {
+    const { includeAgentLabel = false } = options;
     const wb = XLSX.utils.book_new();
 
     // Feuille Agents
@@ -196,21 +198,30 @@ const FileManager = {
     XLSX.utils.book_append_sheet(wb, wsLog, 'Logiciels');
 
     // Feuille Habilitations
-    const habRows = data.habilitations.map(h => ({
-      ID: h.id,
-      AgentID: h.agentId,
-      LogicielID: h.logicielId,
-      Rôle: h.role,
-      Permissions: h.permissions,
-      Groupes: (h.groupes || []).join(', '),
-      Statut: h.statut,
-      Valideur: h.valideur,
-      DateCréation: h.dateCreation,
-      DateModif: h.dateDerniereModif,
-      DateProchRevision: h.dateProchRevision,
-      DateDerniereValidation: h.dateDerniereValidation,
-      Commentaires: h.commentaires
-    }));
+    const habRows = data.habilitations.map(h => {
+      const row = {
+        ID: h.id,
+        AgentID: h.agentId,
+        LogicielID: h.logicielId,
+        Rôle: h.role,
+        Permissions: h.permissions,
+        Groupes: (h.groupes || []).join(', '),
+        Statut: h.statut,
+        Valideur: h.valideur,
+        DateCréation: h.dateCreation,
+        DateModif: h.dateDerniereModif,
+        DateProchRevision: h.dateProchRevision,
+        DateDerniereValidation: h.dateDerniereValidation,
+        Commentaires: h.commentaires
+      };
+
+      if (includeAgentLabel) {
+        const agent = data.agents.find(a => a.id === h.agentId);
+        row.Agent = agent ? `${agent.nom || ''} ${agent.prenom || ''}`.trim() : '';
+      }
+
+      return row;
+    });
     const wsHab = XLSX.utils.json_to_sheet(habRows);
     XLSX.utils.book_append_sheet(wb, wsHab, 'Habilitations');
 
@@ -284,8 +295,7 @@ const FileManager = {
       if (row.Groupes) {
         groupes = row.Groupes.split(',').map(g => g.trim()).filter(g => g);
       } else if (row.Groupe) {
-        // Ancien format avec groupe unique
-        groupes = row.Groupe ? [row.Groupe] : [];
+        // Ancien format avec groupe unique ? groupes = row.Groupe  [row.Groupe] : [];
       }
 
       return {
