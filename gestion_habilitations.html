@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -14,7 +14,7 @@
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="stylesheet" href="css/styles.css">
-<link href="https://fonts.googleapis.com/css2family=Material+Symbols+Outlined" rel="stylesheet">
+
 
 </head>
 <body>
@@ -70,24 +70,24 @@
       <div class="nav-tab active" data-tab="dashboard" onclick="switchTab('dashboard')"><span class="tab-icon">◈</span> Tableau de bord</div>
       <div class="nav-tab" data-tab="agents" onclick="switchTab('agents')"><span class="tab-icon">👤</span> Agents</div>
       <div class="nav-tab" data-tab="habilitations" onclick="switchTab('habilitations')"><span class="tab-icon">☰</span> Habilitations</div>
-      <div class="nav-tab" data-tab="revisions" onclick="switchTab('revisions')"><span class="tab-icon">â±</span> Révisions <span id="revBadge" class="tab-badge" style="display:none"></span></div>
+      <div class="nav-tab" data-tab="revisions" onclick="switchTab('revisions')"><span class="tab-icon">⏱</span> Révisions <span id="revBadge" class="tab-badge" style="display:none"></span></div>
       <div class="nav-tab" data-tab="settings" onclick="switchTab('settings')"><span class="tab-icon">⚙</span> Paramètres</div>
     </nav>
     <div class="header-actions">
       <span class="save-indicator" id="saveIndicator" title="État de sauvegarde">
         <span class="save-icon" id="saveIcon"></span>
-        <span class="material-symbols-outlined save-sync" id="saveSync" style="display:none;">sync</span>
+        <svg class="save-sync" id="saveSync" style="display:none;" xmlns="http://www.w3.org/2000/svg" height="20" width="20" viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true"><path d="M160-160v-80h110l-16-14q-52-46-73-105t-21-119q0-111 66.5-197.5T400-790v84q-72 26-116 88.5T240-478q0 46 16.5 87.5T308-318l12 10v-92h80v240H160Zm400-10v-84q72-26 116-88.5T720-482q0-46-16.5-87.5T652-642l-12-10v92h-80v-240h240v80H690l16 14q52 46 73 105t21 119q0 111-66.5 197.5T560-170Z"/></svg>
       </span>
       <span class="encrypt-indicator" id="encryptIndicator" onclick="switchTab('settings')" title="État du chiffrement">
         <span id="encIcon">🔓</span>
       </span>
       <button class="theme-toggle" onclick="toggleTheme()" title="Basculer le thème clair/sombre"><span class="theme-icon-sun">☀</span><span class="theme-icon-moon">☾</span></button>
       <button class="btn btn-ghost btn-sm" onclick="document.getElementById('importExcelInput').click()" title="Importer des données depuis un fichier Excel">⬆</button>
-      <button class="btn btn-ghost btn-sm" onclick="exportFile()" title="Exporter un audit en Excel (non chiffré)">â¬‡</button>
+      <button class="btn btn-ghost btn-sm" onclick="exportFile()" title="Exporter un audit en Excel (non chiffré)">⬇</button>
       <button class="btn btn-primary btn-sm" onclick="saveFile()" id="saveBtn" title="Sauvegarder le registre">💾</button>
       <input type="file" id="importExcelInput" accept=".xlsx" style="display:none;" onchange="handleImportExcel(this)">
       <div style="width:1px;height:24px;background:var(--border);margin:0 2px;flex-shrink:0;"></div>
-      <button class="btn btn-ghost btn-sm" onclick="confirmDisconnect()" title="Fermer le registre et revenir à l'écran d'accueil" style="color:var(--text2);">â</button>
+      <button class="btn btn-ghost btn-sm" onclick="confirmDisconnect()" title="Fermer le registre et revenir à l'écran d'accueil" style="color:var(--text2);">⏏</button>
     </div>
   </header>
 
@@ -525,7 +525,7 @@
         <input type="password" class="form-control" id="passwordInput2" placeholder="Ressaisir le mot de passe" autocomplete="new-password">
       </div>
       <div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--text3);line-height:1.6;">
-        <strong>âš ï¸ Important :</strong><br>
+        <strong>⚠️ Important :</strong><br>
         • Le mot de passe n'est jamais stocké<br>
         • Il sera nécessaire à chaque ouverture du fichier<br>
         • Une clé de récupération sera générée pour récupérer vos données en cas d'oubli
@@ -549,7 +549,7 @@
     </div>
     <div class="modal-body">
       <div style="padding:14px;background:var(--orange-bg);border:2px solid var(--orange);border-radius:10px;margin-bottom:16px;">
-        <strong style="color:var(--orange);font-size:14px;">âš ï¸ TRÈS IMPORTANT</strong>
+        <strong style="color:var(--orange);font-size:14px;">⚠️ TRÈS IMPORTANT</strong>
         <p style="margin:8px 0 0 0;font-size:13px;line-height:1.6;color:var(--text);">
           Cette clé permet de récupérer votre mot de passe en cas d'oubli.<br>
           <strong>Sans cette clé, vos données seront définitivement perdues si vous oubliez votre mot de passe.</strong>
@@ -590,7 +590,7 @@
     </div>
     <div class="modal-body">
       <div style="padding:12px;background:var(--blue-bg);border:1px solid var(--blue);border-radius:8px;margin-bottom:16px;font-size:12px;color:var(--text);line-height:1.6;">
-        <strong>â„¹ï¸ Récupération de mot de passe</strong><br>
+        <strong>ℹ️ Récupération de mot de passe</strong><br>
         Saisissez les 24 mots de votre clé de récupération. Votre mot de passe sera automatiquement récupéré.
       </div>
 
@@ -653,7 +653,7 @@
     </div>
     <div class="modal-body">
       <div style="padding:12px;background:var(--blue-bg);border:1px solid var(--blue);border-radius:8px;margin-bottom:16px;font-size:12px;color:var(--text);line-height:1.6;">
-        <strong>â„¹ï¸ Fichier sélectionné</strong><br>
+        <strong>ℹ️ Fichier sélectionné</strong><br>
         <span id="importExcelFileName" style="font-family:monospace;font-size:11px;"></span>
       </div>
 
@@ -678,7 +678,7 @@
                  onmouseout="if(!this.querySelector('input').checked) this.style.borderColor='transparent'">
             <input type="radio" name="importMode" value="replace" style="margin-top:2px;flex-shrink:0;" onchange="updateImportModeStyle()">
             <div style="flex:1;">
-              <div style="font-weight:600;margin-bottom:4px;color:var(--red);">âš ï¸ Remplacer tout</div>
+              <div style="font-weight:600;margin-bottom:4px;color:var(--red);">⚠️ Remplacer tout</div>
               <div style="font-size:12px;color:var(--text3);line-height:1.5;">
                 Supprime toutes les données actuelles et les remplace par celles du fichier.<br>
                 <strong style="color:var(--red);">Action irréversible !</strong>

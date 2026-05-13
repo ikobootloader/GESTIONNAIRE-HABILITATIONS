@@ -110,7 +110,8 @@ const PaginationManager = {
       </select>
     `;
 
-    // Boutons de navigation ? const prevDisabled = currentPage === 1 ? 'disabled' : '';
+    // Boutons de navigation
+    const prevDisabled = currentPage === 1 ? 'disabled' : '';
     const nextDisabled = currentPage === totalPages ? 'disabled' : '';
 
     // Génération des numéros de pages avec ellipses

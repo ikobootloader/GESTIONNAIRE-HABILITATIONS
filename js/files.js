@@ -295,7 +295,8 @@ const FileManager = {
       if (row.Groupes) {
         groupes = row.Groupes.split(',').map(g => g.trim()).filter(g => g);
       } else if (row.Groupe) {
-        // Ancien format avec groupe unique ? groupes = row.Groupe  [row.Groupe] : [];
+        // Ancien format avec groupe unique
+        groupes = row.Groupe ? [row.Groupe] : [];
       }
 
       return {

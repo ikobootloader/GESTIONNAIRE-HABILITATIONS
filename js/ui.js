@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Module d'Interface Utilisateur
  * Gestion des modales, toasts, navigation, thème
  */

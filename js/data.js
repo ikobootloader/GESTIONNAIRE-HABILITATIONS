@@ -92,7 +92,8 @@ const DataModel = {
     // Migration habilitations : groupe (string) → groupes (array)
     this.habilitations.forEach(hab => {
       if (hab.groupe && !hab.groupes) {
-        // Ancien format : groupe en string ? hab.groupes = hab.groupe  [hab.groupe] : [];
+        // Ancien format : groupe en string
+        hab.groupes = hab.groupe ? [hab.groupe] : [];
         delete hab.groupe;
       } else if (!hab.groupes) {
         // Nouveau format sans données

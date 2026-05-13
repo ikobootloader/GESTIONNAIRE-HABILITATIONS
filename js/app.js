@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Module Principal - Orchestrateur de l'Application
  * Initialisation, gestion du splash screen, sauvegarde
  */

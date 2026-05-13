@@ -1,4 +1,4 @@
-﻿# Changelog
+# Changelog
 
 Historique des modifications du Gestionnaire d'Habilitations.
 
